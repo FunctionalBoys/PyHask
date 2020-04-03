@@ -36,68 +36,68 @@ parens = between (symbol "(") (symbol ")")
 brackets :: Parser a -> Parser a
 brackets = between (symbol "[") (symbol "]")
 
-ifSymbol :: Parser Text
-ifSymbol = symbol "if"
+ifSymbol :: Parser ()
+ifSymbol = reservedWord "if"
 
-elifSymbol :: Parser Text
-elifSymbol = symbol "elif"
+elifSymbol :: Parser ()
+elifSymbol = reservedWord "elif"
 
-elseSymbol :: Parser Text
-elseSymbol = symbol "else"
+elseSymbol :: Parser ()
+elseSymbol = reservedWord "else"
 
-plusSymbol :: Parser Text
-plusSymbol = symbol "+"
+plusSymbol :: Parser ()
+plusSymbol = void $ symbol "+"
 
-minusSymbol :: Parser Text
-minusSymbol = symbol "-"
+minusSymbol :: Parser ()
+minusSymbol = void $ symbol "-"
 
-divisionSymbol :: Parser Text
-divisionSymbol = symbol "/"
+divisionSymbol :: Parser ()
+divisionSymbol = void $ symbol "/"
 
-timesSymbol :: Parser Text
-timesSymbol = symbol "*"
+timesSymbol :: Parser ()
+timesSymbol = void $ symbol "*"
 
-equalSymbol :: Parser Text
-equalSymbol = symbol ":="
+equalSymbol :: Parser ()
+equalSymbol = void $ symbol ":="
 
-isEqualSymbol :: Parser Text
-isEqualSymbol = symbol "=="
+isEqualSymbol :: Parser ()
+isEqualSymbol = void $ symbol "=="
 
-lessSymbol :: Parser Text
-lessSymbol = symbol "<"
+lessSymbol :: Parser ()
+lessSymbol = void $ symbol "<"
 
-greaterSymbol :: Parser Text
-greaterSymbol = symbol ">"
+greaterSymbol :: Parser ()
+greaterSymbol = void $ symbol ">"
 
-differentSymbol :: Parser Text
-differentSymbol = symbol "!="
+differentSymbol :: Parser ()
+differentSymbol = void $ symbol "!="
 
-lessEqSymbol :: Parser Text
-lessEqSymbol = symbol "<="
+lessEqSymbol :: Parser ()
+lessEqSymbol = void $ symbol "<="
 
-greaterEqSymbol :: Parser Text
-greaterEqSymbol = symbol ">="
+greaterEqSymbol :: Parser ()
+greaterEqSymbol = void $ symbol ">="
 
-andSymbol :: Parser Text 
-andSymbol = symbol "and"
+andSymbol :: Parser ()
+andSymbol = reservedWord "and"
 
-orSymbol :: Parser Text
-orSymbol = symbol "or"
+orSymbol :: Parser ()
+orSymbol = reservedWord "or"
 
-notSymbol :: Parser Text
-notSymbol = symbol "not"
+notSymbol :: Parser ()
+notSymbol = reservedWord "not"
 
-commaSymbol :: Parser Text
-commaSymbol = symbol ","
+commaSymbol :: Parser ()
+commaSymbol = void $ symbol ","
 
-dotSymbol :: Parser Text
-dotSymbol = symbol "."
+dotSymbol :: Parser ()
+dotSymbol = void $ symbol "."
 
-voidSymbol :: Parser Text
-voidSymbol = symbol "void"
+voidSymbol :: Parser ()
+voidSymbol = reservedWord "void"
 
-printSymbol :: Parser Text
-printSymbol = symbol "print"
+printSymbol :: Parser ()
+printSymbol = reservedWord "print"
 
 readSymbol :: Parser ()
 readSymbol = reservedWord "read"

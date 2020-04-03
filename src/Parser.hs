@@ -4,12 +4,16 @@ module Parser where
 
 import           Control.Monad              (void)
 import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void Text
+
+reservedWords :: [Text]
+reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "True", "False", "continue", "pass", "break"]
 
 scn :: Parser ()
 scn = L.space space1 empty empty
@@ -91,3 +95,11 @@ voidSymbol = symbol "void"
 
 printSymbol :: Parser Text
 printSymbol = symbol "print"
+
+identifier :: Parser Text
+identifier = (lexeme . try) (p >>= check)
+  where
+    p = T.pack <$> ((:) <$> letterChar <*> many alphaNumChar)
+    check x = if x `elem` reservedWords
+      then fail $ "Reserved word " ++ show x ++ " cannot be an identifier"
+      else return x

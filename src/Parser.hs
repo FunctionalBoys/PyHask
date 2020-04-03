@@ -96,6 +96,21 @@ voidSymbol = symbol "void"
 printSymbol :: Parser Text
 printSymbol = symbol "print"
 
+intLiteral :: Parser Int
+intLiteral = lexeme L.decimal
+
+floatLiteral :: Parser Double
+floatLiteral = lexeme L.float
+
+trueSymbol :: Parser Bool
+trueSymbol = True <$ reservedWord "True"
+
+falseSymbol :: Parser Bool
+falseSymbol = False <$ reservedWord "False"
+
+stringLiteral :: Parser Text
+stringLiteral = char '\'' >> T.pack <$> manyTill alphaNumChar (char '\'')
+
 identifier :: Parser Text
 identifier = (lexeme . try) (p >>= check)
   where

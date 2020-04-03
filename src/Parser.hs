@@ -27,6 +27,9 @@ lexeme = L.lexeme sc
 symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
+reservedWord :: Text -> Parser ()
+reservedWord w = string w *> notFollowedBy alphaNumChar *> sc
+
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
@@ -95,6 +98,39 @@ voidSymbol = symbol "void"
 
 printSymbol :: Parser Text
 printSymbol = symbol "print"
+
+readSymbol :: Parser ()
+readSymbol = reservedWord "read"
+
+forSymbol :: Parser ()
+forSymbol = reservedWord "for"
+
+whileSymbol :: Parser ()
+whileSymbol = reservedWord "while"
+
+colonSymbol :: Parser ()
+colonSymbol = void $ symbol ":"
+
+classSymbol :: Parser ()
+classSymbol = reservedWord "class"
+
+defSymbol :: Parser ()
+defSymbol = reservedWord "def"
+
+arrowSymbol :: Parser ()
+arrowSymbol = void $ symbol "->"
+
+letSymbol :: Parser ()
+letSymbol = reservedWord "let"
+
+continueSymbol :: Parser ()
+continueSymbol = reservedWord "continue"
+
+passSymbol :: Parser ()
+passSymbol = reservedWord "pass"
+
+breakSymbol :: Parser ()
+breakSymbol = reservedWord "break"
 
 intLiteral :: Parser Int
 intLiteral = lexeme L.decimal

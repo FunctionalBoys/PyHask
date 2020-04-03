@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser where
+module Lexer where
 
 import           Control.Monad              (void)
 import           Data.Text                  (Text)

@@ -4,8 +4,11 @@ import           Data.List.NonEmpty (NonEmpty)
 import           Data.Text          (Text)
 import           Data.Void
 import           Text.Megaparsec
+import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void Text
+
+type IndentOpt = L.IndentOpt Parser
 
 data SimpleType = IntType | FloatType | BoolType | StringType | CharType deriving (Eq,Show)
 

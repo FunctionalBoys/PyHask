@@ -26,7 +26,7 @@ symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 reservedWord :: Text -> Parser ()
-reservedWord w = string w *> notFollowedBy alphaNumChar *> sc
+reservedWord w = try(string w *> notFollowedBy alphaNumChar *> sc)
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")

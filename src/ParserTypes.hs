@@ -11,4 +11,6 @@ data SimpleType = IntType | FloatType | BoolType | StringType | CharType derivin
 
 data ReturnType = ValueReturn SimpleType | VoidReturn
 
+data Statement = Continue | Break | Pass deriving (Eq,Show)
+
 

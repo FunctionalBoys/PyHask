@@ -136,14 +136,14 @@ arrowSymbol = void $ symbol "->"
 letSymbol :: Parser ()
 letSymbol = reservedWord "let"
 
-continueSymbol :: Parser ()
-continueSymbol = reservedWord "continue"
+continueSymbol :: Parser Statement
+continueSymbol = Continue <$ reservedWord "continue"
 
-passSymbol :: Parser ()
-passSymbol = reservedWord "pass"
+passSymbol :: Parser Statement
+passSymbol = Pass <$ reservedWord "pass"
 
-breakSymbol :: Parser ()
-breakSymbol = reservedWord "break"
+breakSymbol :: Parser Statement
+breakSymbol = Break <$ reservedWord "break"
 
 intLiteral :: Parser Int
 intLiteral = lexeme L.decimal

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d1a15494ba68bf8b2732965543dbb23ef0fca7acc25a598354ab03c28d7feeaa
+-- hash: 36590be965082cce5712ec62aef969a1039a1faed3784eb9077d34c95f9ffcb2
 
 name:           PyHask
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Lexer
       Lib
+      Parser
       ParserTypes
   other-modules:
       Paths_PyHask

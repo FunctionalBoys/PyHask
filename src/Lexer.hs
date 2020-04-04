@@ -11,7 +11,7 @@ import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 reservedWords :: [Text]
-reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "True", "False", "continue", "pass", "break", "and", "or", "not", "print", "read"]
+reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "True", "False", "continue", "pass", "break", "and", "or", "not", "print", "read", "int", "float", "void", "string", "char"]
 
 scn :: Parser ()
 scn = L.space space1 empty empty

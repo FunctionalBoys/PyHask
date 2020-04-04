@@ -91,8 +91,23 @@ commaSymbol = void $ symbol ","
 dotSymbol :: Parser ()
 dotSymbol = void $ symbol "."
 
-voidSymbol :: Parser ()
-voidSymbol = reservedWord "void"
+intSymbol :: Parser SimpleType
+intSymbol = IntType <$ reservedWord "int"
+
+boolSymbol :: Parser SimpleType
+boolSymbol = BoolType <$ reservedWord "bool"
+
+floatSymbol :: Parser SimpleType
+floatSymbol = FloatType <$ reservedWord "float"
+
+charSymbol :: Parser SimpleType
+charSymbol = CharType <$ reservedWord "char"
+
+stringSymbol :: Parser SimpleType
+stringSymbol = CharType <$ reservedWord "string"
+
+voidSymbol :: Parser ReturnType
+voidSymbol = VoidReturn <$ reservedWord "void"
 
 printSymbol :: Parser ()
 printSymbol = reservedWord "print"

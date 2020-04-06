@@ -11,7 +11,7 @@ import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 reservedWords :: [Text]
-reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "True", "False", "continue", "pass", "break", "and", "or", "not", "print", "read"]
+reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "True", "False", "continue", "pass", "break", "and", "or", "not", "print", "read", "int", "float", "void", "string", "char"]
 
 scn :: Parser ()
 scn = L.space space1 empty empty
@@ -26,7 +26,7 @@ symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 reservedWord :: Text -> Parser ()
-reservedWord w = string w *> notFollowedBy alphaNumChar *> sc
+reservedWord w = try(string w *> notFollowedBy alphaNumChar *> sc)
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
@@ -91,8 +91,23 @@ commaSymbol = void $ symbol ","
 dotSymbol :: Parser ()
 dotSymbol = void $ symbol "."
 
-voidSymbol :: Parser ()
-voidSymbol = reservedWord "void"
+intSymbol :: Parser SimpleType
+intSymbol = IntType <$ reservedWord "int"
+
+boolSymbol :: Parser SimpleType
+boolSymbol = BoolType <$ reservedWord "bool"
+
+floatSymbol :: Parser SimpleType
+floatSymbol = FloatType <$ reservedWord "float"
+
+charSymbol :: Parser SimpleType
+charSymbol = CharType <$ reservedWord "char"
+
+stringSymbol :: Parser SimpleType
+stringSymbol = CharType <$ reservedWord "string"
+
+voidSymbol :: Parser ReturnType
+voidSymbol = VoidReturn <$ reservedWord "void"
 
 printSymbol :: Parser ()
 printSymbol = reservedWord "print"
@@ -121,14 +136,14 @@ arrowSymbol = void $ symbol "->"
 letSymbol :: Parser ()
 letSymbol = reservedWord "let"
 
-continueSymbol :: Parser ()
-continueSymbol = reservedWord "continue"
+continueSymbol :: Parser Statement
+continueSymbol = Continue <$ reservedWord "continue"
 
-passSymbol :: Parser ()
-passSymbol = reservedWord "pass"
+passSymbol :: Parser Statement
+passSymbol = Pass <$ reservedWord "pass"
 
-breakSymbol :: Parser ()
-breakSymbol = reservedWord "break"
+breakSymbol :: Parser Statement
+breakSymbol = Break <$ reservedWord "break"
 
 intLiteral :: Parser Int
 intLiteral = lexeme L.decimal

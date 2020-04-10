@@ -59,6 +59,7 @@ data Function = Function { functionName       :: Text,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
 
+data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 
 data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)
 

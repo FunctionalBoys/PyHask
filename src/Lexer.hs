@@ -43,44 +43,47 @@ elifSymbol = reservedWord "elif"
 elseSymbol :: Parser ()
 elseSymbol = reservedWord "else"
 
-plusSymbol :: Parser ()
-plusSymbol = void $ symbol "+"
+plusSymbol :: Parser Op
+plusSymbol = Sum <$ symbol "+"
 
-minusSymbol :: Parser ()
-minusSymbol = void $ symbol "-"
+minusSymbol :: Parser Op
+minusSymbol = Minus <$ symbol "-"
 
-divisionSymbol :: Parser ()
-divisionSymbol = void $ symbol "/"
+divisionSymbol :: Parser Op
+divisionSymbol = Div <$ symbol "/"
 
-timesSymbol :: Parser ()
-timesSymbol = void $ symbol "*"
+timesSymbol :: Parser Op
+timesSymbol = Times <$ symbol "*"
+
+exponentSymbol :: Parser Op
+exponentSymbol = Exp <$ symbol "**"
 
 equalSymbol :: Parser ()
 equalSymbol = void $ symbol ":="
 
-isEqualSymbol :: Parser ()
-isEqualSymbol = void $ symbol "=="
+isEqualSymbol :: Parser Op
+isEqualSymbol = Eq <$ symbol "=="
 
-lessSymbol :: Parser ()
-lessSymbol = void $ symbol "<"
+lessSymbol :: Parser Op
+lessSymbol = Lt <$ symbol "<"
 
-greaterSymbol :: Parser ()
-greaterSymbol = void $ symbol ">"
+greaterSymbol :: Parser Op
+greaterSymbol = Gt <$ symbol ">"
 
-differentSymbol :: Parser ()
-differentSymbol = void $ symbol "!="
+differentSymbol :: Parser Op
+differentSymbol = NEq <$ symbol "!="
 
-lessEqSymbol :: Parser ()
-lessEqSymbol = void $ symbol "<="
+lessEqSymbol :: Parser Op
+lessEqSymbol = Lte <$ symbol "<="
 
-greaterEqSymbol :: Parser ()
-greaterEqSymbol = void $ symbol ">="
+greaterEqSymbol :: Parser Op
+greaterEqSymbol = Gte <$ symbol ">="
 
-andSymbol :: Parser ()
-andSymbol = reservedWord "and"
+andSymbol :: Parser Op
+andSymbol = And <$ reservedWord "and"
 
-orSymbol :: Parser ()
-orSymbol = reservedWord "or"
+orSymbol :: Parser Op
+orSymbol = Or <$ reservedWord "or"
 
 notSymbol :: Parser ()
 notSymbol = reservedWord "not"

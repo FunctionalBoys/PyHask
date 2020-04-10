@@ -169,7 +169,7 @@ stringLiteral = char '\'' >> T.pack <$> manyTill alphaNumChar (char '\'')
 identifier :: Parser Text
 identifier = (lexeme . try) (p >>= check)
   where
-    p = T.pack <$> ((:) <$> letterChar <*> many alphaNumChar)
+    p = T.pack <$> ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_'))
     check x = if x `elem` reservedWords
       then fail $ "Reserved word " ++ show x ++ " cannot be an identifier"
       else return x

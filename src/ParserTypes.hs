@@ -40,3 +40,9 @@ data Expr =
 data WhileLoop = WhileLoop { whileCondition  :: Expr,
                              whileStatements :: NonEmpty Statement
                            } deriving (Eq,Show)
+
+data ForLoop = ForLoop { forDeclaration :: Declaration,
+                         forCondition :: Expr
+                         forAssigment :: Assigment
+                         forStatements :: NonEmpty Statement
+                        } deriving (Eq,Show)

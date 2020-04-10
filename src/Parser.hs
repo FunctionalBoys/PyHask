@@ -2,6 +2,8 @@
 
 module Parser where
 
+import           AnalysisUtils
+import           Control.Monad.Combinators.Expr
 import           Control.Monad.Combinators.NonEmpty
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
@@ -157,8 +159,38 @@ factor = choice [ parens simpleExpr
                 , try exprArrayAccess
                 , exprId]
 
+operatorTable :: [[Operator Parser SimpleExpr]]
+operatorTable = [ [ prefix minusSymbol Neg
+                  , prefix plusSymbol id]
+                , [ rightBinary exponentSymbol]
+                , [ binary timesSymbol
+                  , binary divisionSymbol]
+                , [ binary plusSymbol
+                  , binary minusSymbol]
+                , [ binary isEqualSymbol
+                  , binary lessEqSymbol
+                  , binary greaterEqSymbol
+                  , binary differentSymbol
+                  , binary lessSymbol
+                  , binary greaterSymbol]
+                , [ prefix notSymbol Not]
+                , [ binary andSymbol]
+                , [ binary orSymbol]]
+
+binary :: Parser Op -> Operator Parser SimpleExpr
+binary = InfixL . fmap Operate
+
+rightBinary :: Parser Op -> Operator Parser SimpleExpr
+rightBinary = InfixR . fmap Operate
+
+prefix :: Parser a -> (SimpleExpr -> SimpleExpr) -> Operator Parser SimpleExpr
+prefix name f = Prefix (f <$ name)
+
+simpleExpr :: Parser SimpleExpr
+simpleExpr = makeExprParser factor operatorTable
+
 expr :: Parser Expr
-expr = undefined
+expr = simpleExpr >>= exprCheck
 
 simpleAssignment :: Parser SimpleAssignment
 simpleAssignment = do

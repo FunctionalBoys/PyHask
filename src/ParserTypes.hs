@@ -72,6 +72,7 @@ data SimpleExpr =
   | MethodCall Text Text [Expr]
   | MemberAccess Text Text
   | Not SimpleExpr
+  | Neg SimpleExpr
   | Operate Op SimpleExpr SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)
 

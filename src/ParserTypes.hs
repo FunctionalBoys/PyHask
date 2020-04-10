@@ -1,7 +1,7 @@
 module ParserTypes where
 
-import           Data.List.NonEmpty (NonEmpty)
-import           Data.Text          (Text)
+import           Data.List.NonEmpty         (NonEmpty)
+import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -37,6 +37,6 @@ data Expr =
   | I Int
   | F Double deriving (Eq, Show)
 
-data WhileLoop = WhileLoop { whileCondition :: Expr,
+data WhileLoop = WhileLoop { whileCondition  :: Expr,
                              whileStatements :: NonEmpty Statement
                            } deriving (Eq,Show)

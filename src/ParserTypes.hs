@@ -66,3 +66,12 @@ data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,
                          forAssignment      :: SimpleAssignment,
                          forStatements      :: NonEmpty Statement
                         } deriving (Eq,Show)
+
+data ConditionalBlock = ConditionalBlock { conditionalExpr :: Expr,
+                                           conditionalStatements :: NonEmpty Statement
+                                         } deriving (Eq,Show)
+
+data Conditional = Conditional { ifBlock :: ConditionalBlock,
+                                 elifBlocks :: [ConditionalBlock],
+                                 elseBlock :: Maybe (NonEmpty Statement)
+                               } deriving (Eq,Show)

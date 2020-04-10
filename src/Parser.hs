@@ -55,6 +55,20 @@ whileParser = indentBlock whileBlock
       colonSymbol
       indentSome (return . WhileLoop whileCondition) statement
 
+ifParser :: Parser Conditional
+ifParser = do
+  ifBlock <- indentBlock $ indentedCondition ifSymbol
+  elifBlocks <- many $ indentBlock $ indentedCondition elifSymbol
+  elseBlock <- optional $ indentBlock indentedElse
+  return Conditional{..}
+    where
+      indentedCondition firstSymbol = do
+        _ <- firstSymbol
+        conditionalExpr <- expr
+        colonSymbol
+        indentSome (return . ConditionalBlock conditionalExpr) statement
+      indentedElse = elseSymbol *> indentSome return statement
+
 declaration :: Parser Statement
 declaration = do
   letSymbol

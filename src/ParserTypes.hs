@@ -27,3 +27,9 @@ data Function = Function { functionName       :: Text,
                            functionReturnType :: ReturnType,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
+
+data Expr =
+    Var Text
+  | I Int
+  | F Double deriving (Eq, Show)
+

@@ -50,3 +50,16 @@ statement = choice [ continueSymbol
                    , breakSymbol
                    , passSymbol]
 
+exprId :: Parser Expr
+exprId = do
+  ident <- identifier
+  return (Var ident)
+
+exprInt :: Parser Expr
+exprInt = I <$> intLiteral
+
+exprFloat :: Parser Expr
+exprFloat = F <$> floatLiteral
+
+expr :: Parser Expr
+expr = undefined

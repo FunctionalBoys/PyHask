@@ -16,6 +16,10 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
+data SimpleAssignment = SimpleAssignment { assigmentName :: Text,
+                                           assigmentExpr :: Expr 
+                                        } deriving (Eq,Show)
+
 data Statement =
     Continue
   | Break
@@ -41,8 +45,10 @@ data WhileLoop = WhileLoop { whileCondition  :: Expr,
                              whileStatements :: NonEmpty Statement
                            } deriving (Eq,Show)
 
-data ForLoop = ForLoop { forDeclaration :: Declaration,
-                         forCondition :: Expr
-                         forAssigment :: Assigment
+data ForLoop = ForLoop { forDeclaration :: (NonEmpty Text),
+                         forDeclarationType :: SimpleType,
+                         forDeclarationExpr :: Expr,
+                         forCondition :: Expr,
+                         forAssignment :: SimpleAssignment,
                          forStatements :: NonEmpty Statement
                         } deriving (Eq,Show)

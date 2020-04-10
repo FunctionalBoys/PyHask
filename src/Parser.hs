@@ -82,17 +82,28 @@ exprFloat :: Parser Expr
 exprFloat = F <$> floatLiteral
 
 expr :: Parser Expr
-expr = undefined
+expr = exprInt 
+
+simpleAssignment :: Parser SimpleAssignment
+simpleAssignment = do
+  i <- identifier
+  equalSymbol
+  e <- expr
+  return (SimpleAssignment i e)
 
 forParser :: Parser ForLoop
 forParser = indentBlock forBlock
   where 
     forBlock = do
       forSymbol
-      forDeclaration <- declaration
+      forDeclaration <- sepBy1 identifier commaSymbol
+      colonSymbol
+      forDeclarationType <- simpleType
+      equalSymbol
+      forDeclarationExpr <- expr
       colonSymbol
       forCondition <- expr
       colonSymbol 
-      forAssigment <- assigment
+      forAssigment <- simpleAssignment
       colonSymbol 
-      indentSome (return . ForLoop forDeclaration) statement
+      indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forAssigment) statement

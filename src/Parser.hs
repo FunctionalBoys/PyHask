@@ -69,6 +69,20 @@ ifParser = do
         indentSome (return . ConditionalBlock conditionalExpr) statement
       indentedElse = elseSymbol *> indentSome return statement
 
+printParser :: Parser Statement
+printParser = do
+  printSymbol
+  e <- parens expr
+  return (PrintStatement e)
+
+readParser :: Parser Statement
+readParser = do
+  ident <- identifier
+  equalSymbol
+  readSymbol
+  -- TODO: reading int as a placeholder
+  return (ReadStatement ident IntType)
+
 declaration :: Parser Declaration
 declaration = do
   letSymbol
@@ -85,7 +99,11 @@ statement = choice [ continueSymbol
                    , ObjectAssignmentStatement <$> try objectAssignment
                    , ArrayAssignmentStatement <$> try arrayAssignmet
                    , SimpleAssignmentStatement <$> try simpleAssignment
-                   , DeclarationStatement <$> declaration]
+                   , WhileStatement <$> whileParser
+                   , ConditionalStatement <$> ifParser
+                   , printParser
+                   , DeclarationStatement <$> declaration
+                   , readParser]
 
 exprId :: Parser Expr
 exprId = do

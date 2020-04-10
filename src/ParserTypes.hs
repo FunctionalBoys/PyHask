@@ -38,6 +38,10 @@ data Statement =
   | SimpleAssignmentStatement SimpleAssignment
   | ArrayAssignmentStatement ArrayAssignment
   | ObjectAssignmentStatement ObjectAssignment
+  | ConditionalStatement Conditional
+  | WhileStatement WhileLoop
+  | PrintStatement Expr
+  | ReadStatement Text SimpleType
   | DeclarationStatement Declaration deriving (Eq,Show)
 
 data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,

@@ -16,7 +16,11 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data Statement = Continue | Break | Pass deriving (Eq,Show)
+data Statement =
+    Continue
+  | Break
+  | Pass
+  | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
                                            argumentType :: SimpleType

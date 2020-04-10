@@ -38,7 +38,12 @@ data Statement =
   | SimpleAssignmentStatement SimpleAssignment
   | ArrayAssignmentStatement ArrayAssignment
   | ObjectAssignmentStatement ObjectAssignment
-  | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
+  | DeclarationStatement Declaration deriving (Eq,Show)
+
+data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
+                                 declarationType :: ComposedType,
+                                 declarationInit :: Maybe Expr
+                               } deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
                                            argumentType :: SimpleType

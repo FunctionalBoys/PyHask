@@ -69,13 +69,13 @@ ifParser = do
         indentSome (return . ConditionalBlock conditionalExpr) statement
       indentedElse = elseSymbol *> indentSome return statement
 
-declaration :: Parser Statement
+declaration :: Parser Declaration
 declaration = do
   letSymbol
   identifiers <- sepBy1 identifier commaSymbol
   colonSymbol
   idType <- composedType
-  rExpr <- expr
+  rExpr <- optional $ equalSymbol *> expr
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement
@@ -85,7 +85,7 @@ statement = choice [ continueSymbol
                    , ObjectAssignmentStatement <$> try objectAssignment
                    , ArrayAssignmentStatement <$> try arrayAssignmet
                    , SimpleAssignmentStatement <$> try simpleAssignment
-                   , declaration]
+                   , DeclarationStatement <$> declaration]
 
 exprId :: Parser Expr
 exprId = do

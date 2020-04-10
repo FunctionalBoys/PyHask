@@ -45,6 +45,15 @@ functionParser = indentBlock functionBlock
       colonSymbol
       indentSome (return . Function functionName functionArguments functionReturnType) statement
 
+whileParser :: Parser WhileLoop
+whileParser = indentBlock whileBlock
+  where
+    whileBlock = do
+      whileSymbol
+      whileCondition <- expr
+      colonSymbol
+      indentSome (return . WhileLoop whileCondition) statement
+
 statement :: Parser Statement
 statement = choice [ continueSymbol
                    , breakSymbol

@@ -33,3 +33,6 @@ data Expr =
   | I Int
   | F Double deriving (Eq, Show)
 
+data WhileLoop = WhileLoop { whileCondition :: Expr,
+                             whileStatements :: NonEmpty Statement
+                           } deriving (Eq,Show)

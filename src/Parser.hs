@@ -83,3 +83,12 @@ exprFloat = F <$> floatLiteral
 
 expr :: Parser Expr
 expr = undefined
+
+forParser :: Parser ForParser
+forParser = indentBlock forBlock
+  where 
+    forBlock = do
+      forSymbol
+      forDeclaration <- declaration
+      colonSymbol
+      indentSome (return . ForParser forDeclaration) statement

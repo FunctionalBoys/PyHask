@@ -105,16 +105,57 @@ statement = choice [ continueSymbol
                    , DeclarationStatement <$> declaration
                    , readParser]
 
-exprId :: Parser Expr
+exprId :: Parser SimpleExpr
 exprId = do
   ident <- identifier
   return (Var ident)
 
-exprInt :: Parser Expr
-exprInt = I <$> intLiteral
+exprMemberAccess :: Parser SimpleExpr
+exprMemberAccess = do
+  obj <- selfSymbol <|> identifier
+  dotSymbol
+  member <- identifier
+  return (MemberAccess obj member)
 
-exprFloat :: Parser Expr
-exprFloat = F <$> floatLiteral
+exprArrayAccess :: Parser SimpleExpr
+exprArrayAccess = do
+  ident <- identifier
+  index <- brackets expr
+  return (ArrayAccess ident index)
+
+exprInt :: Parser SimpleExpr
+exprInt = IntLiteral <$> intLiteral
+
+exprFloat :: Parser SimpleExpr
+exprFloat = FloatLiteral <$> floatLiteral
+
+exprBool :: Parser SimpleExpr
+exprBool = BoolLiteral <$> (trueSymbol <|> falseSymbol)
+
+exprFunctionCall :: Parser SimpleExpr
+exprFunctionCall = do
+  functionName <- identifier
+  arguments <- parens $ sepBy expr commaSymbol
+  return (FunctionCall functionName arguments)
+
+exprMethodCall :: Parser SimpleExpr
+exprMethodCall = do
+  objectName <- identifier
+  dotSymbol
+  methodName <- identifier
+  arguments <- parens $ sepBy expr commaSymbol
+  return (MethodCall objectName methodName arguments)
+
+factor :: Parser SimpleExpr
+factor = choice [ parens simpleExpr
+                , try exprFloat
+                , exprInt
+                , exprBool
+                , try exprMethodCall
+                , try exprFunctionCall
+                , try exprMemberAccess
+                , try exprArrayAccess
+                , exprId]
 
 expr :: Parser Expr
 expr = undefined

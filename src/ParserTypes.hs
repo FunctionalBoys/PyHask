@@ -1,7 +1,7 @@
 module ParserTypes where
 
-import           Data.List.NonEmpty (NonEmpty)
-import           Data.Text          (Text)
+import           Data.List.NonEmpty         (NonEmpty)
+import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -16,7 +16,11 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data Statement = Continue | Break | Pass deriving (Eq,Show)
+data Statement =
+    Continue
+  | Break
+  | Pass
+  | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
                                            argumentType :: SimpleType
@@ -27,3 +31,12 @@ data Function = Function { functionName       :: Text,
                            functionReturnType :: ReturnType,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
+
+data Expr =
+    Var Text
+  | I Int
+  | F Double deriving (Eq, Show)
+
+data WhileLoop = WhileLoop { whileCondition  :: Expr,
+                             whileStatements :: NonEmpty Statement
+                           } deriving (Eq,Show)

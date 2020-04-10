@@ -2,12 +2,13 @@
 
 module Parser where
 
-import           Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty         as N
+import           Control.Monad.Combinators.NonEmpty
+import           Data.List.NonEmpty                 (NonEmpty)
+import qualified Data.List.NonEmpty                 as N
 import           Lexer
 import           ParserTypes
-import           Text.Megaparsec            hiding (some)
-import qualified Text.Megaparsec.Char.Lexer as L
+import           Text.Megaparsec                    hiding (sepBy1, some)
+import qualified Text.Megaparsec.Char.Lexer         as L
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
@@ -45,8 +46,40 @@ functionParser = indentBlock functionBlock
       colonSymbol
       indentSome (return . Function functionName functionArguments functionReturnType) statement
 
+whileParser :: Parser WhileLoop
+whileParser = indentBlock whileBlock
+  where
+    whileBlock = do
+      whileSymbol
+      whileCondition <- expr
+      colonSymbol
+      indentSome (return . WhileLoop whileCondition) statement
+
+declaration :: Parser Statement
+declaration = do
+  letSymbol
+  identifiers <- sepBy1 identifier commaSymbol
+  colonSymbol
+  idType <- composedType
+  rExpr <- expr
+  return (Declaration identifiers idType rExpr)
+
 statement :: Parser Statement
 statement = choice [ continueSymbol
                    , breakSymbol
-                   , passSymbol]
+                   , passSymbol
+                   , declaration]
 
+exprId :: Parser Expr
+exprId = do
+  ident <- identifier
+  return (Var ident)
+
+exprInt :: Parser Expr
+exprInt = I <$> intLiteral
+
+exprFloat :: Parser Expr
+exprFloat = F <$> floatLiteral
+
+expr :: Parser Expr
+expr = undefined

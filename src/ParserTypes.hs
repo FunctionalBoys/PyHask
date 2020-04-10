@@ -24,6 +24,7 @@ data Statement =
     Continue
   | Break
   | Pass
+  | ForLoop
   | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,

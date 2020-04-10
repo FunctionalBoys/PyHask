@@ -82,7 +82,7 @@ exprFloat :: Parser Expr
 exprFloat = F <$> floatLiteral
 
 expr :: Parser Expr
-expr = exprInt 
+expr = undefined
 
 simpleAssignment :: Parser SimpleAssignment
 simpleAssignment = do

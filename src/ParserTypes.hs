@@ -59,10 +59,20 @@ data Function = Function { functionName       :: Text,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
 
-data Expr =
+
+data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)
+
+data SimpleExpr =
     Var Text
-  | I Int
-  | F Double deriving (Eq, Show)
+  | IntLiteral Int
+  | FloatLiteral Double
+  | BoolLiteral Bool
+  | FunctionCall Text [Expr]
+  | MethodCall Text Text [Expr]
+  | MemberAccess Text Text
+  | Not SimpleExpr
+  | Operate Op SimpleExpr SimpleExpr
+  | ArrayAccess Text Expr deriving (Eq, Show)
 
 data WhileLoop = WhileLoop { whileCondition  :: Expr,
                              whileStatements :: NonEmpty Statement

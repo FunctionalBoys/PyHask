@@ -17,17 +17,17 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
-                                           assignmentExpr :: Expr 
-                                        } deriving (Eq,Show)
+                                           assignmentExpr :: Expr
+                                         } deriving (Eq,Show)
 
-data ArrayAssignment = ArrayAssignment { arrayAssigmnentName :: Text,
+data ArrayAssignment = ArrayAssignment { arrayAssigmnentName  :: Text,
                                          arrayAssignmentIndex :: Expr,
-                                         arrayAssignmentExpr :: Expr
-                                      } deriving (Eq,Show)
+                                         arrayAssignmentExpr  :: Expr
+                                       } deriving (Eq,Show)
 
-data ObjectAssignment = ObjectAssignment { objectAssignmentName :: Text,
+data ObjectAssignment = ObjectAssignment { objectAssignmentName   :: Text,
                                            objectAssignmentMember :: Text,
-                                           objectAssignmentExpr :: Expr
+                                           objectAssignmentExpr   :: Expr
                                          } deriving (Eq,Show)
 
 data Statement =
@@ -59,10 +59,10 @@ data WhileLoop = WhileLoop { whileCondition  :: Expr,
                              whileStatements :: NonEmpty Statement
                            } deriving (Eq,Show)
 
-data ForLoop = ForLoop { forDeclaration :: (NonEmpty Text),
+data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,
                          forDeclarationType :: SimpleType,
                          forDeclarationExpr :: Expr,
-                         forCondition :: Expr,
-                         forAssignment :: SimpleAssignment,
-                         forStatements :: NonEmpty Statement
+                         forCondition       :: Expr,
+                         forAssignment      :: SimpleAssignment,
+                         forStatements      :: NonEmpty Statement
                         } deriving (Eq,Show)

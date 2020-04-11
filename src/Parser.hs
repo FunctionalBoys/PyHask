@@ -94,7 +94,7 @@ simpleAssignment = do
   e <- expr
   return (SimpleAssignment i e)
 
-arrayAssignmet :: Parser ArrayAssignment 
+arrayAssignmet :: Parser ArrayAssignment
 arrayAssignmet = do
   i <- identifier
   a <- brackets expr
@@ -113,7 +113,7 @@ objectAssignment = do
 
 forParser :: Parser ForLoop
 forParser = indentBlock forBlock
-  where 
+  where
     forBlock = do
       forSymbol
       forDeclaration <- sepBy1 identifier commaSymbol
@@ -123,7 +123,7 @@ forParser = indentBlock forBlock
       forDeclarationExpr <- expr
       colonSymbol
       forCondition <- expr
-      colonSymbol 
+      colonSymbol
       forAssigment <- simpleAssignment
-      colonSymbol 
+      colonSymbol
       indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forAssigment) statement

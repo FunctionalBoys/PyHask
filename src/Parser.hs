@@ -91,6 +91,18 @@ simpleAssignment = do
   e <- expr
   return (SimpleAssignment i e)
 
+arrayAssignmet :: Parser ArrayAssignment 
+arrayAssignmet = do
+  i <- identifier
+  a <- brackets expr
+  equalSymbol
+  e <- expr
+  return (ArrayAssignment i a e)
+
+objectAssignment :: Parser objectAssignment
+objectAssignment = do 
+  
+
 forParser :: Parser ForLoop
 forParser = indentBlock forBlock
   where 

@@ -16,15 +16,20 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data SimpleAssignment = SimpleAssignment { assigmentName :: Text,
-                                           assigmentExpr :: Expr 
+data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
+                                           assignmentExpr :: Expr 
                                         } deriving (Eq,Show)
+
+data ArrayAssignment = ArrayAssignment { arrayAssigmnentName :: Text,
+                                         arrayAssignmentIndex :: Expr,
+                                         arrayAssignmentExpr :: Expr
+                                      } deriving (Eq,Show)
 
 data Statement =
     Continue
   | Break
   | Pass
-  | ForLoop
+  | ForLoopStatement ForLoop
   | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,

@@ -13,11 +13,14 @@ import qualified Text.Megaparsec.Char.Lexer as L
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break", "and", "or", "not", "print", "read", "int", "float", "void", "string", "char"]
 
+lineComment :: Parser ()
+lineComment = L.skipLineComment "#"
+
 scn :: Parser ()
-scn = L.space space1 empty empty
+scn = L.space space1 lineComment empty
 
 sc :: Parser ()
-sc = L.space (void $ some (char ' ' <|> char '\t')) empty empty
+sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc

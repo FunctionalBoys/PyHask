@@ -14,15 +14,17 @@ MemberAccess ::= ('id' | 'self') '.' 'id' ('[' Expr ']')?
 Block ::= Statement+
 If ::= 'if' Expr ':' Block ('elif' Expr ':' Block)* ('else' Block)?
 While ::= 'while' Expr ':' Block
-For ::= 'for' Declaration ':' Expr ':' Assignment ':' Block
+For ::= 'for' 'id' (',' 'id')* ':' SimpleType ':=' Expr ':' Expr ':' Assignment ':' Block
 Expr ::= AndExpr 'or' Expr | AndExpr
-AndExpr ::= CExpr 'and' AndExpr | CExpr
-CExpr ::= FirstLevel ('==' | '!=' | '>' | '<' | '<=' | '>=') Expr | FirstLevel
+AndExpr ::= NotExpr 'and' AndExpr | NotExpr
+NotExpr ::= 'not'? CExpr
+CExpr ::= FirstLevel ('==' | '!=' | '>' | '<' | '<=' | '>=') CExpr | FirstLevel
 FirstLevel ::= SecondLevel ('+' | '-') FirstLevel | SecondLevel
 SecondLevel ::= ThirdLevel ('*' | '/') SecondLevel | ThirdLevel
-ThirdLevel ::= Factor '**' ThirdLevel | Factor
-Factor ::= 'id' | FunctionCall | MethodCall | ArrayAccess | MemberAccess | 'not' Expr | '(' Expr ')' | Integer | Float | Bool | String
-Integer ::= '-'? IntLiteral
-Float ::= '-'? FloatLiteral
+ThirdLevel ::= FourthLevel '**' ThirdLevel | FourthLevel
+FourthLevel ::= ('+' | '-')? Factor
+Factor ::= 'id' | FunctionCall | MethodCall | ArrayAccess | MemberAccess | '(' Expr ')' | Integer | Float | Bool | String
+Integer ::= IntLiteral
+Float ::= FloatLiteral
 Bool ::= 'True' | 'False'
 ArrayAccess ::= 'id' '[' Expr ']'

@@ -28,13 +28,16 @@ data ArrayAssignment = ArrayAssignment { arrayAssigmnentName :: Text,
 data ObjectAssignment = ObjectAssignment { objectAssignmentName :: Text,
                                            objectAssignmentMember :: Text,
                                            objectAssignmentExpr :: Expr
-                                         }
+                                         } deriving (Eq,Show)
 
 data Statement =
     Continue
   | Break
   | Pass
   | ForLoopStatement ForLoop
+  | SimpleAssignmentStatement SimpleAssignment
+  | ArrayAssignmentStatement ArrayAssignment
+  | ObjectAssignmentStatement ObjectAssignment
   | Declaration (NonEmpty Text) ComposedType Expr deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,

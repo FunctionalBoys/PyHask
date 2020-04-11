@@ -68,6 +68,9 @@ statement :: Parser Statement
 statement = choice [ continueSymbol
                    , breakSymbol
                    , passSymbol
+                   , ObjectAssignmentStatement <$> try objectAssignment
+                   , ArrayAssignmentStatement <$> try arrayAssignmet
+                   , SimpleAssignmentStatement <$> try simpleAssignment
                    , declaration]
 
 exprId :: Parser Expr

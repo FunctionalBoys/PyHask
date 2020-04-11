@@ -1,0 +1,3 @@
+* PyHask
+PyHask is the project for compiler's design class, it aims to build
+a small object oriented programming language using Haskell with syntax inspired on Python.

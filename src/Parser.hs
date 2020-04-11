@@ -99,9 +99,14 @@ arrayAssignmet = do
   e <- expr
   return (ArrayAssignment i a e)
 
-objectAssignment :: Parser objectAssignment
-objectAssignment = do 
-  
+objectAssignment :: Parser ObjectAssignment
+objectAssignment = do
+  obj <- identifier
+  dotSymbol
+  member <- identifier
+  equalSymbol
+  e <- expr
+  return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop
 forParser = indentBlock forBlock

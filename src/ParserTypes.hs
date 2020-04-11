@@ -25,6 +25,11 @@ data ArrayAssignment = ArrayAssignment { arrayAssigmnentName :: Text,
                                          arrayAssignmentExpr :: Expr
                                       } deriving (Eq,Show)
 
+data ObjectAssignment = ObjectAssignment { objectAssignmentName :: Text,
+                                           objectAssignmentMember :: Text,
+                                           objectAssignmentExpr :: Expr
+                                         }
+
 data Statement =
     Continue
   | Break

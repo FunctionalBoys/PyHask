@@ -102,6 +102,7 @@ statement = choice [ continueSymbol
                    , ArrayAssignmentStatement <$> try arrayAssignmet
                    , SimpleAssignmentStatement <$> try simpleAssignment
                    , WhileStatement <$> whileParser
+                   , ForLoopStatement <$> forParser
                    , ConditionalStatement <$> ifParser
                    , printParser
                    , DeclarationStatement <$> declaration

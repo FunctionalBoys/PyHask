@@ -63,6 +63,22 @@ data ClassMember = ClassMember { memberIdentifier :: Text,
                                  memberType :: ComposedType
                                } deriving (Eq,Show)
 
+data ClassConstructorAssignment =
+    ConstructorSimpleAssignment SimpleAssignment
+  | ConstructorArrayAssignment ArrayAssignment
+  | ConstructorObjectAssignment ObjectAssignment
+  | ConstructorPass deriving (Eq,Show)
+
+data ClassConstructorParameter = ClassConstructorParameter { classConstructorParameterId :: Text,
+                                                             classConstructorParemeterType :: ComposedType
+                                                           } deriving (Eq,Show)
+
+data ClassConstructor = ClassConstructor { classConstructorParameters :: [ClassConstructorParameter],
+                                           classSuperConstructor :: Maybe [Text],
+                                           classConstructorAssignment :: NonEmpty ClassConstructorAssignment
+
+                                         } deriving (Eq,Show)
+
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 
 data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)

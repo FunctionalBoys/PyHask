@@ -242,3 +242,27 @@ classMember = do
   colonSymbol
   memberType <- composedType
   return ClassMember{..}
+
+classConstructorParameter :: Parser ClassConstructorParameter
+classConstructorParameter = do
+  classConstructorParameterId <- identifier
+  colonSymbol
+  classConstructorParemeterType <- composedType
+  return ClassConstructorParameter{..}
+
+classConstructorParser :: Parser ClassConstructor
+classConstructorParser = indentBlock indentedConstructor
+  where
+    indentedConstructor = do
+      _ <- identifier
+      classConstructorParameters <- parens $ many classConstructorParameter
+      classSuperConstructor <- optional . try $ colonSymbol *> superConstructor
+      colonSymbol
+      indentSome (return . ClassConstructor classConstructorParameters classSuperConstructor) constructorAssignments
+    superConstructor = do
+      superSymbol
+      parens $ many identifier
+    constructorAssignments = choice [ ConstructorPass <$ passSymbol
+                                    , ConstructorSimpleAssignment <$> try simpleAssignment
+                                    , ConstructorObjectAssignment <$> try objectAssignment
+                                    , ConstructorArrayAssignment <$> try arrayAssignmet]

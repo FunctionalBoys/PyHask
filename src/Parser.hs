@@ -108,6 +108,20 @@ readParser = do
   -- TODO: reading int as a placeholder
   return (ReadStatement ident IntType)
 
+functionCallParser :: Parser FunctionCall
+functionCallParser = do
+  functionCallName <- identifier
+  functionCallArguments <- parens $ sepBy expr commaSymbol
+  return FunctionCall{..}
+
+methodCallParser :: Parser MethodCall
+methodCallParser = do
+  methodCallObjectName <- selfSymbol <|> identifier
+  dotSymbol
+  methodCallMethodName <- identifier
+  methodCallArguments <- parens $ sepBy expr commaSymbol
+  return MethodCall{..}
+
 returnParser :: Parser Statement
 returnParser = do
   returnSymbol
@@ -131,6 +145,8 @@ statement = choice [ continueSymbol
                    , ObjectAssignmentStatement <$> try objectAssignment
                    , ArrayAssignmentStatement <$> try arrayAssignmet
                    , SimpleAssignmentStatement <$> try simpleAssignment
+                   , MethodCallStatement <$> try methodCallParser
+                   , FunctionCallStatement <$> try functionCallParser
                    , WhileStatement <$> whileParser
                    , ForLoopStatement <$> forParser
                    , ConditionalStatement <$> ifParser
@@ -167,18 +183,10 @@ exprBool :: Parser SimpleExpr
 exprBool = BoolLiteral <$> (trueSymbol <|> falseSymbol)
 
 exprFunctionCall :: Parser SimpleExpr
-exprFunctionCall = do
-  functionName <- identifier
-  arguments <- parens $ sepBy expr commaSymbol
-  return (FunctionCall functionName arguments)
+exprFunctionCall = FunctionCallExpr <$> functionCallParser
 
 exprMethodCall :: Parser SimpleExpr
-exprMethodCall = do
-  objectName <- identifier
-  dotSymbol
-  methodName <- identifier
-  arguments <- parens $ sepBy expr commaSymbol
-  return (MethodCall objectName methodName arguments)
+exprMethodCall = MethodCallExpr <$> methodCallParser
 
 factor :: Parser SimpleExpr
 factor = choice [ parens simpleExpr

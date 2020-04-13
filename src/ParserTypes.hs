@@ -53,6 +53,8 @@ data Statement =
   | ReadStatement Text SimpleType
   | CreateObjectStatement CreateObject
   | ReturnStatement (Maybe Expr)
+  | FunctionCallStatement FunctionCall
+  | MethodCallStatement MethodCall
   | DeclarationStatement Declaration deriving (Eq,Show)
 
 data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
@@ -69,6 +71,15 @@ data Function = Function { functionName       :: Text,
                            functionReturnType :: ReturnType,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
+
+data FunctionCall = FunctionCall { functionCallName :: Text,
+                                   functionCallArguments :: [Expr]
+                                 } deriving (Eq,Show)
+
+data MethodCall = MethodCall { methodCallObjectName :: Text,
+                               methodCallMethodName :: Text,
+                               methodCallArguments :: [Expr]
+                             } deriving (Eq,Show)
 
 data ClassMember = ClassMember { memberIdentifier :: Text,
                                  memberType       :: ComposedType
@@ -115,8 +126,8 @@ data SimpleExpr =
   | IntLiteral Int
   | FloatLiteral Double
   | BoolLiteral Bool
-  | FunctionCall Text [Expr]
-  | MethodCall Text Text [Expr]
+  | FunctionCallExpr FunctionCall
+  | MethodCallExpr MethodCall
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr

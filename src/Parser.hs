@@ -41,6 +41,7 @@ functionParser :: Parser Function
 functionParser = indentBlock functionBlock
   where
     functionBlock = do
+      defSymbol
       functionName <- identifier
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol

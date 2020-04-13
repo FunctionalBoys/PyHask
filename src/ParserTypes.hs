@@ -54,8 +54,8 @@ data Statement =
   | DeclarationStatement Declaration deriving (Eq,Show)
 
 data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
-                                 declarationType :: ComposedType,
-                                 declarationInit :: Maybe Expr
+                                 declarationType        :: ComposedType,
+                                 declarationInit        :: Maybe Expr
                                } deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
@@ -69,7 +69,7 @@ data Function = Function { functionName       :: Text,
                          } deriving (Eq,Show)
 
 data ClassMember = ClassMember { memberIdentifier :: Text,
-                                 memberType :: ComposedType
+                                 memberType       :: ComposedType
                                } deriving (Eq,Show)
 
 data ClassConstructorAssignment =
@@ -96,10 +96,10 @@ data ClassInitialization = ClassInitialization { classMembers :: [ClassMember],
 
 data ClassHelper = ClassHelperInit ClassInitialization | ClassHelperMethod Function
 
-data Class = Class { className :: Text,
-                     classFather :: Maybe Text,
+data Class = Class { className           :: Text,
+                     classFather         :: Maybe Text,
                      classInitialization :: ClassInitialization,
-                     classMethods :: [Function]
+                     classMethods        :: [Function]
                    } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
@@ -135,7 +135,7 @@ data ConditionalBlock = ConditionalBlock { conditionalExpr :: Expr,
                                            conditionalStatements :: NonEmpty Statement
                                          } deriving (Eq,Show)
 
-data Conditional = Conditional { ifBlock :: ConditionalBlock,
+data Conditional = Conditional { ifBlock    :: ConditionalBlock,
                                  elifBlocks :: [ConditionalBlock],
-                                 elseBlock :: Maybe (NonEmpty Statement)
+                                 elseBlock  :: Maybe (NonEmpty Statement)
                                } deriving (Eq,Show)

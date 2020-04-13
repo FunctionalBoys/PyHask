@@ -266,3 +266,17 @@ classConstructorParser = indentBlock indentedConstructor
                                     , ConstructorSimpleAssignment <$> try simpleAssignment
                                     , ConstructorObjectAssignment <$> try objectAssignment
                                     , ConstructorArrayAssignment <$> try arrayAssignmet]
+
+classInitializationParser :: Parser ClassInitialization
+classInitializationParser = indentBlock initBlock
+  where
+    initBlock = do
+      initSymbol *> colonSymbol
+      indentSome listToInit helper
+    helper = ClassMemberHelper <$> classMember <|> ClassConstructorHelper <$> classConstructorParser
+    listToInit l = ClassInitialization <$> traverse checkMember (N.init l) <*> (checkConstructor . N.last) l
+    checkMember (ClassMemberHelper x) = return x
+    checkMember _ = fail "Can't have members after constructor definition"
+    checkConstructor (ClassConstructorHelper x) = return x
+    checkConstructor _ = fail "Constructor is required"
+

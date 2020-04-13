@@ -79,6 +79,12 @@ data ClassConstructor = ClassConstructor { classConstructorParameters :: [ClassC
 
                                          } deriving (Eq,Show)
 
+data ClassInitHelper = ClassConstructorHelper ClassConstructor | ClassMemberHelper ClassMember
+
+data ClassInitialization = ClassInitialization { classMembers :: [ClassMember],
+                                                 classConstructor :: ClassConstructor
+                                               } deriving (Eq,Show)
+
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 
 data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)

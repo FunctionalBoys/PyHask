@@ -72,13 +72,13 @@ data Function = Function { functionName       :: Text,
                            functionStatements :: NonEmpty Statement
                          } deriving (Eq,Show)
 
-data FunctionCall = FunctionCall { functionCallName :: Text,
+data FunctionCall = FunctionCall { functionCallName      :: Text,
                                    functionCallArguments :: [Expr]
                                  } deriving (Eq,Show)
 
 data MethodCall = MethodCall { methodCallObjectName :: Text,
                                methodCallMethodName :: Text,
-                               methodCallArguments :: [Expr]
+                               methodCallArguments  :: [Expr]
                              } deriving (Eq,Show)
 
 data ClassMember = ClassMember { memberIdentifier :: Text,

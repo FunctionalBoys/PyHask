@@ -1,6 +1,7 @@
 class Hola:
   init:
     Hola():
+      super()
       pass
 
   def f() -> int:

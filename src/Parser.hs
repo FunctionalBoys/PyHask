@@ -278,9 +278,8 @@ classConstructorParser = indentBlock indentedConstructor
     indentedConstructor = do
       _ <- identifier
       classConstructorParameters <- parens $ many classConstructorParameter
-      classSuperConstructor <- optional . try $ colonSymbol *> superConstructor
       colonSymbol
-      indentSome (return . ClassConstructor classConstructorParameters classSuperConstructor) constructorAssignments
+      indentSome (listToConstructor $ ClassConstructor classConstructorParameters) helper
     superConstructor = do
       superSymbol
       parens $ many identifier
@@ -288,6 +287,11 @@ classConstructorParser = indentBlock indentedConstructor
                                     , ConstructorSimpleAssignment <$> try simpleAssignment
                                     , ConstructorObjectAssignment <$> try objectAssignment
                                     , ConstructorArrayAssignment <$> try arrayAssignmet]
+    helper = ConstructorSuper <$> superConstructor <|> ConstructorAssignment <$> constructorAssignments
+    listToConstructor f (ConstructorSuper x N.:| xs) = f (Just x) <$> traverse checkAssignment xs
+    listToConstructor f xs = f Nothing <$> traverse checkAssignment (N.toList xs)
+    checkAssignment (ConstructorAssignment x) = return x
+    checkAssignment _                         = fail "Expected assignment"
 
 classInitializationParser :: Parser ClassInitialization
 classInitializationParser = indentBlock initBlock

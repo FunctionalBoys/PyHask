@@ -82,9 +82,11 @@ data ClassConstructorParameter = ClassConstructorParameter { classConstructorPar
                                                              classConstructorParemeterType :: ComposedType
                                                            } deriving (Eq,Show)
 
+data ClassConstructorHelper = ConstructorSuper [Text] | ConstructorAssignment ClassConstructorAssignment
+
 data ClassConstructor = ClassConstructor { classConstructorParameters :: [ClassConstructorParameter],
                                            classSuperConstructor :: Maybe [Text],
-                                           classConstructorAssignment :: NonEmpty ClassConstructorAssignment
+                                           classConstructorAssignment :: [ClassConstructorAssignment]
 
                                          } deriving (Eq,Show)
 

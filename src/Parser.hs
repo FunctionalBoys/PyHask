@@ -11,7 +11,7 @@ import qualified Data.List.NonEmpty                 as N
 import           Data.Text                          (Text)
 import           Lexer
 import           ParserTypes
-import           Text.Megaparsec                    hiding (sepBy1, some)
+import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
 

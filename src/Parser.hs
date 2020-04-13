@@ -234,3 +234,11 @@ forParser = indentBlock forBlock
       forAssigment <- simpleAssignment
       colonSymbol
       indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forAssigment) statement
+
+classMember :: Parser ClassMember
+classMember = do
+  letSymbol
+  memberIdentifier <- identifier
+  colonSymbol
+  memberType <- composedType
+  return ClassMember{..}

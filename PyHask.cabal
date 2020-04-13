@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b666a5215a9962fcbfd75eff75156cf6aa57375f6c5ffd0badbcfb4daf457384
+-- hash: f49a06e7ff054df8dddf7c8c23b91d5cc8c03f28b1f964d253d12b7b1bce8f13
 
 name:           PyHask
 version:        0.1.0.0
@@ -18,7 +18,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
+    README.org
     ChangeLog.md
 
 source-repository head
@@ -39,6 +39,7 @@ library
       base >=4.7 && <5
     , megaparsec
     , mtl
+    , optparse-applicative
     , parser-combinators
     , text
   default-language: Haskell2010
@@ -55,6 +56,7 @@ executable PyHask-exe
     , base >=4.7 && <5
     , megaparsec
     , mtl
+    , optparse-applicative
     , parser-combinators
     , text
   default-language: Haskell2010
@@ -72,6 +74,7 @@ test-suite PyHask-test
     , base >=4.7 && <5
     , megaparsec
     , mtl
+    , optparse-applicative
     , parser-combinators
     , text
   default-language: Haskell2010

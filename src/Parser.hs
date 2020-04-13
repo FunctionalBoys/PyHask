@@ -293,12 +293,12 @@ classConstructorParser = indentBlock indentedConstructor
   where
     indentedConstructor = do
       _ <- identifier
-      classConstructorParameters <- parens $ many classConstructorParameter
+      classConstructorParameters <- parens $ sepBy classConstructorParameter commaSymbol
       colonSymbol
       indentSome (listToConstructor $ ClassConstructor classConstructorParameters) helper
     superConstructor = do
       superSymbol
-      parens $ many identifier
+      parens $ sepBy identifier commaSymbol
     constructorAssignments = choice [ ConstructorPass <$ passSymbol
                                     , ConstructorSimpleAssignment <$> try simpleAssignment
                                     , ConstructorObjectAssignment <$> try objectAssignment

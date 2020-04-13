@@ -280,3 +280,17 @@ classInitializationParser = indentBlock initBlock
     checkConstructor (ClassConstructorHelper x) = return x
     checkConstructor _ = fail "Constructor is required"
 
+classParser :: Parser Class
+classParser = indentBlock classBlock
+  where
+    classBlock = do
+      classSymbol
+      className <- identifier
+      classFather <- optional $ parens identifier
+      colonSymbol
+      indentSome (listToClass $ Class className classFather) helper
+    helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser
+    listToClass f (ClassHelperInit x N.:| xs) = f x <$> traverse checkMember xs
+    listToClass _ _ = fail "Initialization block is required"
+    checkMember (ClassHelperMethod f) = return f
+    checkMember _ = fail "Only one initialization block is allowed"

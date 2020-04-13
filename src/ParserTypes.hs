@@ -85,6 +85,14 @@ data ClassInitialization = ClassInitialization { classMembers :: [ClassMember],
                                                  classConstructor :: ClassConstructor
                                                } deriving (Eq,Show)
 
+data ClassHelper = ClassHelperInit ClassInitialization | ClassHelperMethod Function
+
+data Class = Class { className :: Text,
+                     classFather :: Maybe Text,
+                     classInitialization :: ClassInitialization,
+                     classMethods :: [Function]
+                   } deriving (Eq,Show)
+
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 
 data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)

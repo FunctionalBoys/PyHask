@@ -108,6 +108,12 @@ readParser = do
   -- TODO: reading int as a placeholder
   return (ReadStatement ident IntType)
 
+returnParser :: Parser Statement
+returnParser = do
+  returnSymbol
+  mExpr <- optional expr
+  return (ReturnStatement mExpr)
+
 declaration :: Parser Declaration
 declaration = do
   letSymbol
@@ -121,6 +127,7 @@ statement :: Parser Statement
 statement = choice [ continueSymbol
                    , breakSymbol
                    , passSymbol
+                   , returnParser
                    , ObjectAssignmentStatement <$> try objectAssignment
                    , ArrayAssignmentStatement <$> try arrayAssignmet
                    , SimpleAssignmentStatement <$> try simpleAssignment

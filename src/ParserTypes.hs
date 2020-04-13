@@ -52,6 +52,7 @@ data Statement =
   | PrintStatement Expr
   | ReadStatement Text SimpleType
   | CreateObjectStatement CreateObject
+  | ReturnStatement (Maybe Expr)
   | DeclarationStatement Declaration deriving (Eq,Show)
 
 data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,

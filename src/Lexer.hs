@@ -12,7 +12,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break",
-                 "and", "or", "not", "print", "read", "int", "float", "void", "string", "char", "super", "init", "main", "create"]
+                 "and", "or", "not", "print", "read", "int", "float", "void", "string", "char", "super", "init", "main", "return", "create"]
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "#"
@@ -151,6 +151,9 @@ defSymbol = reservedWord "def"
 
 arrowSymbol :: Parser ()
 arrowSymbol = void $ symbol "->"
+
+returnSymbol :: Parser ()
+returnSymbol = reservedWord "return"
 
 letSymbol :: Parser ()
 letSymbol = reservedWord "let"

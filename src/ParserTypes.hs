@@ -30,6 +30,15 @@ data ObjectAssignment = ObjectAssignment { objectAssignmentName   :: Text,
                                            objectAssignmentExpr   :: Expr
                                          } deriving (Eq,Show)
 
+data MainProgramDefinition =
+    MainProgramClass Class
+  | MainProgramFunction Function
+  | MainProgramDeclaration Declaration deriving (Eq,Show)
+
+data MainProgram = MainProgram { mainProgramDefinitions :: [MainProgramDefinition],
+                                 mainStatements :: NonEmpty Statement
+                               } deriving (Eq,Show)
+
 data Statement =
     Continue
   | Break

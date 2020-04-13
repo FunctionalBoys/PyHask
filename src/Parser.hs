@@ -1,22 +1,44 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Parser where
+module Parser (parseProgram) where
 
 import           AnalysisUtils
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.Combinators.NonEmpty
+import           Data.Bifunctor
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
+import           Data.Text                          (Text)
 import           Lexer
 import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1, some)
+import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
+
+mainParser :: Parser MainProgram
+mainParser = indentBlock mainBlock
+  where
+    mainBlock = do
+      mainProgramDefinitions <- many $ choice $ fmap (try . nonIndented) [ MainProgramClass <$> classParser
+                                                          , MainProgramFunction <$> functionParser
+                                                          , MainProgramDeclaration <$> declaration]
+      nonIndented $ mainSymbol *> colonSymbol
+      indentSome (return . MainProgram mainProgramDefinitions) statement
+
+programParser :: Parser MainProgram
+programParser = between space eof mainParser
+
+parseProgram :: String -> Text -> Either String MainProgram
+parseProgram s i = first errorBundlePretty $ runParser programParser s i
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
 
+nonIndented :: Parser a -> Parser a
+nonIndented = L.nonIndented scn
+
 indentation :: Maybe Pos
-indentation = Just (mkPos 3)
+indentation = Nothing
 
 indentSome :: (NonEmpty b -> Parser a) -> Parser b -> Parser (IndentOpt a b)
 indentSome f = return . L.IndentSome indentation (f . N.fromList)

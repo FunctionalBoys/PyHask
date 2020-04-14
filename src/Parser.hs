@@ -129,6 +129,7 @@ statement = choice [ continueSymbol
                    , ConditionalStatement <$> ifParser
                    , printParser
                    , DeclarationStatement <$> declaration
+                   , CreateObjectStatement <$> createObjectParser
                    , readParser]
 
 exprId :: Parser SimpleExpr
@@ -320,3 +321,12 @@ classParser = indentBlock classBlock
     listToClass _ _ = fail "Initialization block is required"
     checkMember (ClassHelperMethod f) = return f
     checkMember _ = fail "Only one initialization block is allowed"
+
+createObjectParser :: Parser CreateObject
+createObjectParser =  do
+  createSymbol
+  variableName <- identifier
+  colonSymbol
+  objectName <- identifier
+  identifiers <- parens $ sepBy identifier commaSymbol
+  return (CreateObject variableName objectName identifiers)

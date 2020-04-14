@@ -51,6 +51,7 @@ data Statement =
   | WhileStatement WhileLoop
   | PrintStatement Expr
   | ReadStatement Text SimpleType
+  | CreateObjectStatement CreateObject
   | DeclarationStatement Declaration deriving (Eq,Show)
 
 data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
@@ -141,3 +142,8 @@ data Conditional = Conditional { ifBlock    :: ConditionalBlock,
                                  elifBlocks :: [ConditionalBlock],
                                  elseBlock  :: Maybe (NonEmpty Statement)
                                } deriving (Eq,Show)
+
+data CreateObject = CreateObject {  variableName :: Text,
+                                    objectName :: Text,
+                                    identifiers :: [Text]
+                                } deriving (Eq,Show)

@@ -12,7 +12,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break",
-                 "and", "or", "not", "print", "read", "int", "float", "void", "string", "char", "super", "init", "main"]
+                 "and", "or", "not", "print", "read", "int", "float", "void", "string", "char", "super", "init", "main", "create"]
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "#"
@@ -186,3 +186,6 @@ identifier = (lexeme . try) (p >>= check)
     check x = if x `elem` reservedWords
       then fail $ "Reserved word " ++ show x ++ " cannot be an identifier"
       else return x
+
+createSymbol :: Parser ()
+createSymbol = reservedWord "create"

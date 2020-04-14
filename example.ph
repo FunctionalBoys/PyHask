@@ -13,4 +13,5 @@ def g() -> void:
   pass
 
 main:
+  create a : Hola()
   pass

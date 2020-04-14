@@ -1,10 +1,15 @@
 Program ::= Declaration* Function* Class* 'main:' Block
-SimpleType ::= ('int' | 'float' | 'string' | 'bool')
+SimpleType ::= ('int' | 'float' | 'string' | 'char' | 'bool')
 ComposedType ::= SimpleType '[' IntLiteral ']' | 'id'
-Class ::= 'class' 'id' ('(' 'id' ')')? ':' ('members:' ('id' (',' 'id')* ':' SimpleType ('[' IntLiteral ']')?)+)* Function+
+Class ::= 'class' 'id' ('(' 'id' ')')? ':' InitBlock Function*
+InitBlock ::= 'init' ':' ('let' 'id' ':' ComposedType)* Constructor
+Constructor ::= 'id' '(' ('id' ':' Composedtype (',' 'id' ':' ComposedType)*)? ')' ':' ConstructorBlock
+ConstructorBlock ::= 'super' '(' ('id' (',' 'id')*)? ')' ConstructorStatement* | ConstructorStatement+
 Function ::= 'def' 'id' '(' ('id' ':' SimpleType ( ',' 'id' ':' SimpleType)*)? ')' '->' (SimpleType | 'void') ':' Block
-Statement ::= FunctionCall | MethodCall | Declaration | Assignment | If | While  | For | Print | Read | 'return' Expr? | 'continue' | 'pass' | 'break'
-Assignment ::= 'id' ('.' 'id')? ('[' Expr ']')? ':=' Expr
+ConstructorStatement ::= Pass | Assignment
+CreateObject ::= 'create' 'id' ':' 'id' '(' ('id' (',' 'id')*)? ')'
+Statement ::= FunctionCall | MethodCall | Declaration | CreateObject | Assignment | If | While  | For | Print | Read | 'return' Expr? | 'continue' | 'pass' | 'break'
+Assignment ::= ('id' | 'self') ('.' 'id')? ('[' Expr ']')? ':=' Expr
 Declaration ::= 'let' 'id' (',' 'id')* ':' ComposedType (':=' Expr)?
 Print ::= 'print' '(' Expr ')'
 Read ::= 'read' '(' ')'

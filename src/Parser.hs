@@ -16,13 +16,14 @@ import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
 
 mainParser :: Parser MainProgram
-mainParser = indentBlock mainBlock
+mainParser = do
+  mainProgramDefinitions <- many $ choice $ fmap nonIndented [ MainProgramFunction <$> functionParser <?> "function definition"
+                                                             , MainProgramDeclaration <$> declaration <?> "global variable"
+                                                             , MainProgramClass <$> classParser <?> "class definition"]
+  label "main block definition" $ nonIndented $ indentBlock $ mainBlock mainProgramDefinitions
   where
-    mainBlock = do
-      mainProgramDefinitions <- many $ choice $ fmap (try . nonIndented) [ MainProgramClass <$> classParser
-                                                          , MainProgramFunction <$> functionParser
-                                                          , MainProgramDeclaration <$> declaration]
-      nonIndented $ mainSymbol *> colonSymbol
+    mainBlock mainProgramDefinitions = do
+      mainSymbol *> colonSymbol
       indentSome (return . MainProgram mainProgramDefinitions) statement
 
 programParser :: Parser MainProgram

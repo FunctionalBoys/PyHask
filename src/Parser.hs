@@ -142,18 +142,18 @@ statement :: Parser Statement
 statement = choice [ continueSymbol
                    , breakSymbol
                    , passSymbol
-                   , returnParser
-                   , ObjectAssignmentStatement <$> try objectAssignment
-                   , ArrayAssignmentStatement <$> try arrayAssignmet
-                   , SimpleAssignmentStatement <$> try simpleAssignment
-                   , MethodCallStatement <$> try methodCallParser
-                   , FunctionCallStatement <$> try functionCallParser
-                   , WhileStatement <$> whileParser
-                   , ForLoopStatement <$> forParser
-                   , ConditionalStatement <$> ifParser
-                   , printParser
-                   , DeclarationStatement <$> declaration
-                   , CreateObjectStatement <$> createObjectParser
+                   , returnParser <?> "function return"
+                   , ObjectAssignmentStatement <$> try objectAssignment <?> "object assignment"
+                   , ArrayAssignmentStatement <$> try arrayAssignmet <?> "array assignment"
+                   , SimpleAssignmentStatement <$> try simpleAssignment <?> "simple assignment"
+                   , MethodCallStatement <$> try methodCallParser <?> "method call"
+                   , FunctionCallStatement <$> try functionCallParser <?> "function call"
+                   , WhileStatement <$> whileParser <?> "while block"
+                   , ForLoopStatement <$> forParser <?> "for block"
+                   , ConditionalStatement <$> ifParser <?> "conditional block"
+                   , printParser <?> "print statement"
+                   , DeclarationStatement <$> declaration <?> "local declaration"
+                   , CreateObjectStatement <$> createObjectParser <?> "object creation"
                    , readParser]
 
 exprId :: Parser SimpleExpr

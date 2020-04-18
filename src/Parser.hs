@@ -14,6 +14,8 @@ import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
+import           Data.Default.Class
+import qualified Data.Text                          as T
 import           Control.Monad.State.Lazy 
 
 mainParser :: Parser MainProgram
@@ -32,6 +34,17 @@ programParser = between space eof mainParser
 
 parseProgram :: String -> Text -> Either String MainProgram
 parseProgram filename input = first errorBundlePretty $ runParser (evalStateT programParser def) filename input
+
+newIdentifier :: Parser Text
+newIdentifier = do
+    ident <- identifier
+    exists <- existsIdentifier ident
+    if exists 
+      then fail ("Identifier " ++ T.unpack ident ++ " already defined!.")
+    else
+      do
+        modify (addPlaceholderVariable ident)
+        return ident
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
@@ -133,7 +146,7 @@ returnParser = do
 declaration :: Parser Declaration
 declaration = do
   letSymbol
-  identifiers <- sepBy1 identifier commaSymbol
+  identifiers <- sepBy1 newIdentifier commaSymbol
   colonSymbol
   idType <- composedType
   rExpr <- optional $ equalSymbol *> expr

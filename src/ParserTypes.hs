@@ -20,7 +20,9 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data Variable = Varibale {  variableType :: ComposedType,
+data VariableType = VariableType ComposedType | VariablePlaceholder deriving (Eq,Show)
+
+data Variable = Variable {  variableType :: VariableType,
                             variableInit :: Bool
                         } deriving (Eq,Show)
 

@@ -39,24 +39,22 @@ data Scope = Scope { scopeType :: ScopeType,
                      scopeVariables :: M.Map Text Variable
                   } deriving (Eq,Show)
 
-data FunctionDefinition = FunctionDefinition { functionDefinitionName       :: Text,
-                                               functionDefinitionArguments  :: [FunctionArgument],
+data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
                                                functionDefinitionReturnType :: ReturnType
                                             } deriving (Eq,Show)
 
-data ClassDefinition = ClassDefinition { classDefinitionName            :: Text,
-                                         classDefinitionFather          :: Maybe Text,
+data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
                                          classDefinitionInitialization  :: ClassInitialization,
                                          classDefinitionMethods         :: [FunctionDefinition]
-                                      } deriving (Eq,Show)
+                                       } deriving (Eq,Show)
 
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
-                                 functionDefinitions  :: [FunctionDefinition],
-                                 classDefinitions     :: [ClassDefinition]
-                              } deriving (Eq,Show)
+                                 functionDefinitions  :: M.Map Text FunctionDefinition,
+                                 classDefinitions     :: M.Map Text ClassDefinition
+                               } deriving (Eq,Show)
 
-instance Default ParserState where 
-  def = ParserState ((Scope ScopeTypeGlobal M.empty) N.:| []) [] []
+instance Default ParserState where
+  def = ParserState (Scope ScopeTypeGlobal M.empty N.:| []) M.empty M.empty
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr

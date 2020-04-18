@@ -21,13 +21,13 @@ existsIdentifier identifier = do
 
 existsClass :: Text -> Parser Bool
 existsClass classIdentifier = do
-    list <- gets classDefinitions
-    return (any (== classIdentifier) (fmap classDefinitionName list))
+    definitions <- gets classDefinitions
+    return $ M.member classIdentifier definitions
 
 existsFunction :: Text -> Parser Bool
 existsFunction functionIdentifier = do
-    list <- gets functionDefinitions
-    return (any (== functionIdentifier) (fmap functionDefinitionName list))
+    definitions <- gets functionDefinitions
+    return $ M.member functionIdentifier definitions
 
 existsVariable :: Text -> Parser Bool
 existsVariable variableIdentifier = do

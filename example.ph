@@ -10,6 +10,7 @@ class Hola:
       pass
 
   def f(d : float) -> int:
+    let de : string := 'hola'
     pass
 
 def g(i : int) -> int:
@@ -18,6 +19,7 @@ def g(i : int) -> int:
     return 5
   for j :int := 0 : j < 10 : j := j + 1:
     if i < 5 and j > 2:
+      i := 200
       break
     else
       continue

@@ -168,6 +168,7 @@ data SimpleExpr =
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr
+  | StringLiteral Text
   | Operate Op SimpleExpr SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)
 

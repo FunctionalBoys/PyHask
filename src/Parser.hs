@@ -23,7 +23,7 @@ mainParser = do
   mainProgramDefinitions <- many $ choice $ fmap nonIndented [ MainProgramFunction <$> functionParser <?> "function definition"
                                                              , MainProgramDeclaration <$> declaration <?> "global variable"
                                                              , MainProgramClass <$> classParser <?> "class definition"]
-  label "main block definition" $ nonIndented $ indentBlock $ mainBlock mainProgramDefinitions
+  label "main block definition" $ nonIndented $ scoped ScopeTypeMain $ indentBlock $ mainBlock mainProgramDefinitions
   where
     mainBlock mainProgramDefinitions = do
       mainSymbol *> colonSymbol
@@ -81,7 +81,7 @@ functionArgument = do
   return FunctionArgument{..}
 
 functionParser :: Parser Function
-functionParser = indentBlock functionBlock
+functionParser = scoped ScopeTypeFunction $ indentBlock functionBlock
   where
     functionBlock = do
       defSymbol
@@ -93,7 +93,7 @@ functionParser = indentBlock functionBlock
       indentSome (return . Function functionName functionArguments functionReturnType) statement
 
 whileParser :: Parser WhileLoop
-whileParser = indentBlock whileBlock
+whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
   where
     whileBlock = do
       whileSymbol
@@ -103,9 +103,9 @@ whileParser = indentBlock whileBlock
 
 ifParser :: Parser Conditional
 ifParser = do
-  ifBlock <- indentBlock $ indentedCondition ifSymbol
-  elifBlocks <- many $ indentBlock $ indentedCondition elifSymbol
-  elseBlock <- optional $ indentBlock indentedElse
+  ifBlock <- scoped ScopeTypeConditional $ indentBlock $ indentedCondition ifSymbol
+  elifBlocks <- many $ scoped ScopeTypeConditional $ indentBlock $ indentedCondition elifSymbol
+  elseBlock <- optional $ scoped ScopeTypeConditional $ indentBlock indentedElse
   return Conditional{..}
     where
       indentedCondition firstSymbol = do
@@ -209,6 +209,9 @@ exprFunctionCall = FunctionCallExpr <$> functionCallParser
 exprMethodCall :: Parser SimpleExpr
 exprMethodCall = MethodCallExpr <$> methodCallParser
 
+exprString :: Parser SimpleExpr
+exprString = StringLiteral <$> stringLiteral
+
 factor :: Parser SimpleExpr
 factor = choice [ parens simpleExpr
                 , try exprFloat
@@ -218,6 +221,7 @@ factor = choice [ parens simpleExpr
                 , try exprFunctionCall
                 , try exprMemberAccess
                 , try exprArrayAccess
+                , exprString
                 , exprId]
 
 operatorTable :: [[Operator Parser SimpleExpr]]
@@ -278,7 +282,7 @@ objectAssignment = do
   return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop
-forParser = indentBlock forBlock
+forParser = scoped ScopeTypeFor $ indentBlock forBlock
   where
     forBlock = do
       forSymbol
@@ -310,7 +314,7 @@ classConstructorParameter = do
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
-classConstructorParser = indentBlock indentedConstructor
+classConstructorParser = scoped ScopeTypeClass $ indentBlock indentedConstructor
   where
     indentedConstructor = do
       _ <- identifier
@@ -366,3 +370,4 @@ createObjectParser =  do
   objectName <- identifier
   identifiers <- parens $ sepBy identifier commaSymbol
   return (CreateObject variableName objectName identifiers)
+

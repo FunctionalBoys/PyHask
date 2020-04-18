@@ -47,15 +47,9 @@ newIdentifierCheck f = do
       return ident
 
 newIdentifier :: Parser Text
-newIdentifier = do
-    ident <- identifier
-    exists <- existsIdentifier ident
-    if exists 
-      then fail ("Identifier " ++ T.unpack ident ++ " already defined!.")
-    else
-      do
-        modify (addPlaceholderVariable ident)
-        return ident
+newIdentifier = newIdentifierCheck addPlaceholderVariable
+
+newFunctionIdentifier = newIdentifierCheck addPlaceHolderFunction
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
@@ -80,7 +74,7 @@ returnType = voidSymbol <|> ValueReturn <$> simpleType
 
 functionArgument :: Parser FunctionArgument
 functionArgument = do
-  argumentName <- identifier
+  argumentName <- newIdentifier
   colonSymbol
   argumentType <- simpleType
   return FunctionArgument{..}
@@ -90,7 +84,7 @@ functionParser = indentBlock functionBlock
   where
     functionBlock = do
       defSymbol
-      functionName <- identifier
+      functionName <- newFunctionIdentifier
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType

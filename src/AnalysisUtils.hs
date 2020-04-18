@@ -34,5 +34,11 @@ existsVariable variableIdentifier = do
     list <- gets scopes
     return (any (M.member variableIdentifier) (fmap scopeVariables list))
 
+addPlaceHolderToScope :: Text -> Scope -> Scope
+addPlaceHolderToScope identifier (Scope sType sVariables) = Scope sType (M.insert identifier (Variable (Simple IntType) False) sVariables)
+
 addPlaceholderVariable :: Text -> ParserState -> ParserState
-addPlaceholderVariable identifier (ParserState ((Scope sType sVariables) N.:| scopes) x y) = ParserState ((Scope sType (M.insert identifier (Variable VariablePlaceholder False) sVariables)) N.:| scopes) x y 
+addPlaceholderVariable identifier (ParserState (scope N.:| rest) x y) = ParserState (addPlaceHolderToScope identifier scope N.:| rest) x y
+
+addPlaceHolderFunction :: Text -> ParserState -> ParserState
+addPlaceHolderFunction identifier (ParserState s fDefinitions c) = ParserState s (M.insert identifier (FunctionDefinition [] (ValueReturn IntType)) fDefinitions) c

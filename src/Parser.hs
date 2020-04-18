@@ -49,6 +49,7 @@ newIdentifierCheck f = do
 newIdentifier :: Parser Text
 newIdentifier = newIdentifierCheck addPlaceholderVariable
 
+newFunctionIdentifier :: Parser Text
 newFunctionIdentifier = newIdentifierCheck addPlaceHolderFunction
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a

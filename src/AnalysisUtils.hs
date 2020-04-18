@@ -1,11 +1,11 @@
 module AnalysisUtils where
 
-import           ParserTypes
-import qualified Data.Map.Strict as M
-import           Data.Text                          (Text)
+import           Control.Monad.State.Lazy
 import           Data.Foldable
-import           Control.Monad.State.Lazy 
-import qualified Data.List.NonEmpty as N
+import qualified Data.List.NonEmpty       as N
+import qualified Data.Map.Strict          as M
+import           Data.Text                (Text)
+import           ParserTypes
 
 
 --TODO: Actually do this

@@ -5,18 +5,18 @@ module Parser (parseProgram) where
 import           AnalysisUtils
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.Combinators.NonEmpty
+import           Control.Monad.State.Lazy
 import           Data.Bifunctor
+import           Data.Default.Class
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
 import           Data.Text                          (Text)
+import qualified Data.Text                          as T
 import           Lexer
 import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
-import           Data.Default.Class
-import qualified Data.Text                          as T
-import           Control.Monad.State.Lazy 
 
 mainParser :: Parser MainProgram
 mainParser = do

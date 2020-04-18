@@ -1,13 +1,13 @@
 module ParserTypes where
 
+import           Control.Monad.State.Lazy
+import           Data.Default.Class
 import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as N
+import qualified Data.Map.Strict            as M
 import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
-import qualified Data.Map.Strict as M
-import           Control.Monad.State.Lazy 
-import           Data.Default.Class
-import qualified Data.List.NonEmpty as N
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = StateT ParserState (Parsec Void Text)
@@ -20,13 +20,11 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data VariableType = VariableType ComposedType | VariablePlaceholder deriving (Eq,Show)
-
-data Variable = Variable {  variableType :: VariableType,
+data Variable = Variable {  variableType :: ComposedType,
                             variableInit :: Bool
-                        } deriving (Eq,Show)
+                         } deriving (Eq,Show)
 
-data ScopeType = 
+data ScopeType =
     ScopeTypeFor
   | ScopeTypeConditional
   | ScopeTypeWhile
@@ -35,9 +33,9 @@ data ScopeType =
   | ScopeTypeClass
   | ScopeTypeGlobal deriving (Eq,Show)
 
-data Scope = Scope { scopeType :: ScopeType,   
+data Scope = Scope { scopeType      :: ScopeType,
                      scopeVariables :: M.Map Text Variable
-                  } deriving (Eq,Show)
+                   } deriving (Eq,Show)
 
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
                                                functionDefinitionReturnType :: ReturnType
@@ -195,6 +193,6 @@ data Conditional = Conditional { ifBlock    :: ConditionalBlock,
                                } deriving (Eq,Show)
 
 data CreateObject = CreateObject {  variableName :: Text,
-                                    objectName :: Text,
-                                    identifiers :: [Text]
+                                    objectName   :: Text,
+                                    identifiers  :: [Text]
                                 } deriving (Eq,Show)

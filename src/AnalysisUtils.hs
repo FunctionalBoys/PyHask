@@ -2,6 +2,7 @@ module AnalysisUtils where
 
 import           Control.Monad.State.Lazy
 import           Data.Foldable
+import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as N
 import qualified Data.Map.Strict          as M
 import           Data.Text                (Text)
@@ -34,6 +35,9 @@ existsVariable variableIdentifier = do
     list <- gets scopes
     return (any (M.member variableIdentifier) (fmap scopeVariables list))
 
+modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
+modifyScopes f (ParserState s d c) = ParserState (f s) d c
+
 addPlaceHolderToScope :: Text -> Scope -> Scope
 addPlaceHolderToScope identifier (Scope sType sVariables) = Scope sType (M.insert identifier (Variable (Simple IntType) False) sVariables)
 
@@ -42,3 +46,11 @@ addPlaceholderVariable identifier (ParserState (scope N.:| rest) x y) = ParserSt
 
 addPlaceHolderFunction :: Text -> ParserState -> ParserState
 addPlaceHolderFunction identifier (ParserState s fDefinitions c) = ParserState s (M.insert identifier (FunctionDefinition [] (ValueReturn IntType)) fDefinitions) c
+
+scoped :: ScopeType -> Parser a -> Parser a
+scoped sType p = do
+  modify (modifyScopes $ N.cons (Scope sType M.empty))
+  result <- p
+  mScopes <- snd. N.uncons <$> gets scopes
+  maybe (fail "Can't destroy all scopes") (\s -> modify(modifyScopes $ const s)) mScopes
+  return result

@@ -35,6 +35,17 @@ programParser = between space eof mainParser
 parseProgram :: String -> Text -> Either String MainProgram
 parseProgram filename input = first errorBundlePretty $ runParser (evalStateT programParser def) filename input
 
+newIdentifierCheck :: (Text ->ParserState -> ParserState) -> Parser Text
+newIdentifierCheck f = do
+  ident <- identifier
+  exists <- existsIdentifier ident
+  if exists
+    then fail ("Identifier " ++ T.unpack ident ++ " already defined")
+  else
+    do
+      modify (f ident)
+      return ident
+
 newIdentifier :: Parser Text
 newIdentifier = do
     ident <- identifier

@@ -1,10 +1,10 @@
 module AnalysisUtils where
 
 import           Control.Monad.State.Lazy
-import           Data.Foldable
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as N
 import qualified Data.Map.Strict          as M
+import           Data.Maybe
 import           Data.Text                (Text)
 import           ParserTypes
 
@@ -38,6 +38,9 @@ existsVariable variableIdentifier = do
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
 modifyScopes f (ParserState s d c) = ParserState (f s) d c
 
+modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
+modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
+
 addPlaceHolderToScope :: Text -> Scope -> Scope
 addPlaceHolderToScope identifier (Scope sType sVariables) = Scope sType (M.insert identifier (Variable (Simple IntType) False) sVariables)
 
@@ -54,3 +57,9 @@ scoped sType p = do
   mScopes <- snd. N.uncons <$> gets scopes
   maybe (fail "Can't destroy all scopes") (\s -> modify(modifyScopes $ const s)) mScopes
   return result
+
+createVariable :: ComposedType -> Maybe Expr -> Variable
+createVariable vType expr = Variable vType (isJust expr)
+
+insertVariable :: Variable -> Text -> ParserState -> ParserState
+insertVariable v ident  = modifyScope (\(Scope sType variables) -> Scope sType (M.insert ident v variables))

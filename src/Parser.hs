@@ -14,6 +14,7 @@ import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
+import           Control.Monad.State.Lazy 
 
 mainParser :: Parser MainProgram
 mainParser = do
@@ -30,7 +31,7 @@ programParser :: Parser MainProgram
 programParser = between space eof mainParser
 
 parseProgram :: String -> Text -> Either String MainProgram
-parseProgram s i = first errorBundlePretty $ runParser programParser s i
+parseProgram filename input = first errorBundlePretty $ runParser (evalStateT programParser def) filename input
 
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn

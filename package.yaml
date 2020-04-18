@@ -26,6 +26,8 @@ dependencies:
 - mtl
 - parser-combinators
 - optparse-applicative
+- containers
+- data-default-class
 
 library:
   source-dirs: src

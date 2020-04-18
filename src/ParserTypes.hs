@@ -4,9 +4,13 @@ import           Data.List.NonEmpty         (NonEmpty)
 import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
+import qualified Data.Map.Strict as M
+import           Control.Monad.State.Lazy 
+import           Data.Default.Class
+import qualified Data.List.NonEmpty as N
 import qualified Text.Megaparsec.Char.Lexer as L
 
-type Parser = Parsec Void Text
+type Parser = StateT ParserState (Parsec Void Text)
 
 type IndentOpt = L.IndentOpt Parser
 
@@ -15,6 +19,42 @@ data SimpleType = IntType | FloatType | BoolType | StringType | CharType derivin
 data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Text deriving (Eq,Show)
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
+
+data Variable = Varibale {  variableType :: ComposedType,
+                            variableInit :: Bool
+                        } deriving (Eq,Show)
+
+data ScopeType = 
+    ScopeTypeFor
+  | ScopeTypeConditional
+  | ScopeTypeWhile
+  | ScopeTypeFunction
+  | ScopeTypeMain
+  | ScopeTypeClass
+  | ScopeTypeGlobal deriving (Eq,Show)
+
+data Scope = Scope { scopeType :: ScopeType,   
+                     scopeVariables :: M.Map Text Variable
+                  } deriving (Eq,Show)
+
+data FunctionDefinition = FunctionDefinition { functionDefinitionName       :: Text,
+                                               functionDefinitionArguments  :: [FunctionArgument],
+                                               functionDefinitionReturnType :: ReturnType
+                                            } deriving (Eq,Show)
+
+data ClassDefinition = ClassDefinition { classDefinitionName            :: Text,
+                                         classDefinitionFather          :: Maybe Text,
+                                         classDefinitionInitialization  :: ClassInitialization,
+                                         classDefinitionMethods         :: [FunctionDefinition]
+                                      } deriving (Eq,Show)
+
+data ParserState = ParserState { scopes               :: NonEmpty Scope,
+                                 functionDefinitions  :: [FunctionDefinition],
+                                 classDefinitions     :: [ClassDefinition]
+                              } deriving (Eq,Show)
+
+instance Default ParserState where 
+  def = ParserState ((Scope ScopeTypeGlobal M.empty) N.:| []) [] []
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr
@@ -100,7 +140,6 @@ data ClassConstructorHelper = ConstructorSuper [Text] | ConstructorAssignment Cl
 data ClassConstructor = ClassConstructor { classConstructorParameters :: [ClassConstructorParameter],
                                            classSuperConstructor :: Maybe [Text],
                                            classConstructorAssignment :: [ClassConstructorAssignment]
-
                                          } deriving (Eq,Show)
 
 data ClassInitHelper = ClassConstructorHelper ClassConstructor | ClassMemberHelper ClassMember

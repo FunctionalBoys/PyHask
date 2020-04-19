@@ -99,8 +99,9 @@ whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
     whileBlock = do
       whileSymbol
       whileCondition <- expr
-      colonSymbol
-      indentSome (return . WhileLoop whileCondition) statement
+      if expressionType whileCondition == Simple BoolType
+        then colonSymbol *> indentSome (return . WhileLoop whileCondition) statement
+        else fail "Only boolean expressions can be used in while condition"
 
 ifParser :: Parser Conditional
 ifParser = do

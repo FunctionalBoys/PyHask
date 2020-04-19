@@ -150,12 +150,11 @@ returnParser = do
   return (ReturnStatement mExpr)
 
 declaration :: Parser Declaration
-declaration = do
-  letSymbol
+declaration = letSymbol *> do
   identifiers <- sepBy1 newIdentifier commaSymbol
-  colonSymbol
-  idType <- composedType
+  idType <- colonSymbol *> composedType
   rExpr <- optional $ equalSymbol *> expr
+  forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement

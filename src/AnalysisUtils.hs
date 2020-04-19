@@ -41,11 +41,8 @@ modifyScopes f (ParserState s d c) = ParserState (f s) d c
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
 modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
 
-addPlaceHolderToScope :: Text -> Scope -> Scope
-addPlaceHolderToScope identifier (Scope sType sVariables) = Scope sType (M.insert identifier (Variable (Simple IntType) False) sVariables)
-
 addPlaceholderVariable :: Text -> ParserState -> ParserState
-addPlaceholderVariable identifier (ParserState (scope N.:| rest) x y) = ParserState (addPlaceHolderToScope identifier scope N.:| rest) x y
+addPlaceholderVariable = insertVariable (Variable (Simple IntType) False)
 
 addPlaceHolderFunction :: Text -> ParserState -> ParserState
 addPlaceHolderFunction identifier (ParserState s fDefinitions c) = ParserState s (M.insert identifier (FunctionDefinition [] (ValueReturn IntType)) fDefinitions) c

@@ -64,6 +64,11 @@ findVariable ident = do
   maps <- fmap scopeVariables <$> gets scopes
   maybeToParser ("Variable " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
+existsScope :: ScopeType -> Parser Bool
+existsScope scopeT = do
+  scopeTypes <- fmap scopeType <$> gets scopes
+  return (elem scopeT scopeTypes)
+
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
 modifyScopes f (ParserState s d c) = ParserState (f s) d c
 

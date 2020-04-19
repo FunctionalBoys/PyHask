@@ -178,6 +178,15 @@ statement = choice [ continueSymbol
                    , CreateObjectStatement <$> createObjectParser <?> "object creation"
                    , readParser]
 
+breakParser :: Parser Statement
+breakParser = do
+    break <- breakSymbol
+    existsFor <- existsScope ScopeTypeFor
+    existsWhile <- existsScope ScopeTypeWhile
+    if existsFor || existsWhile
+      then return break
+      else fail "Break must be inside a while or for loop."
+
 exprId :: Parser SimpleExpr
 exprId = do
   ident <- identifier
@@ -382,4 +391,3 @@ createObjectParser =  do
   objectName <- identifier
   identifiers <- parens $ sepBy identifier commaSymbol
   return (CreateObject variableName objectName identifiers)
-

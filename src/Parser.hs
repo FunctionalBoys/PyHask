@@ -262,8 +262,12 @@ expr = simpleExpr >>= exprCheck
 simpleAssignment :: Parser SimpleAssignment
 simpleAssignment = do
   i <- identifier
+  variable <- findVariable i
   equalSymbol
   e <- expr
+  if expressionType e == variableType variable
+    then return ()
+    else fail "The types of the expression and assignment doesn't match."
   return (SimpleAssignment i e)
 
 arrayAssignmet :: Parser ArrayAssignment
@@ -293,8 +297,14 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
       forDeclarationType <- simpleType
       equalSymbol
       forDeclarationExpr <- expr
+      if expressionType forDeclarationExpr == Simple forDeclarationType
+        then return ()
+        else fail "Expression type must be the same as the declaration type"
       colonSymbol
       forCondition <- expr
+      if expressionType forCondition == Simple BoolType
+        then return ()
+        else fail "Only boolean expressions can be used in for condition"
       colonSymbol
       forAssigment <- simpleAssignment
       colonSymbol

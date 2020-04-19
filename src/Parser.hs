@@ -212,7 +212,9 @@ exprArrayAccess :: Parser SimpleExpr
 exprArrayAccess = do
   ident <- identifier
   index <- brackets expr
-  return (ArrayAccess ident index)
+  if expressionType index == Simple IntType
+    then return (ArrayAccess ident index)
+    else fail "Array access must be an integral expression"
 
 exprInt :: Parser SimpleExpr
 exprInt = IntLiteral <$> intLiteral

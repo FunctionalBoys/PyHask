@@ -157,7 +157,14 @@ declaration = letSymbol *> do
   identifiers <- sepBy1 newIdentifier commaSymbol
   idType <- colonSymbol *> composedType
   rExpr <- optional $ equalSymbol *> expr
-  forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
+  if maybe True ((== idType) . expressionType) rExpr
+    then return ()
+    else fail "Expression must match type"
+  case idType of
+    Simple _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
+    ArrayType sType sz -> forM_ identifiers (modify . insertArray (createArray sType sz rExpr))
+    -- TODO: Manage objects
+    ClassType _ -> return ()
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement

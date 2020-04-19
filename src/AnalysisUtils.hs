@@ -96,8 +96,14 @@ scoped sType = between (addScope sType) destroyScope
 createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
+createArray :: SimpleType -> Int -> Maybe Expr -> Array
+createArray aType sz expr = Array aType sz (isJust expr)
+
 insertVariable :: Variable -> Text -> ParserState -> ParserState
 insertVariable v ident  = modifyScope (\(Scope sType ids variables arrays) -> Scope sType ids (M.insert ident v variables) arrays)
+
+insertArray :: Array -> Text -> ParserState -> ParserState
+insertArray a ident = modifyScope (\(Scope sType ids variables arrays) -> Scope sType ids variables (M.insert ident a arrays))
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c

@@ -25,8 +25,8 @@ data Variable = Variable {  variableType :: ComposedType,
                          } deriving (Eq,Show)
 
 data Array = Array { arrayType :: SimpleType,
-                     arrayInit :: Bool,
-                     arraySize :: Int
+                     arraySize :: Int,
+                     arrayInit :: Bool
                    } deriving (Eq,Show)
 
 data ScopeType =

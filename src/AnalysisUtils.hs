@@ -1,13 +1,14 @@
 module AnalysisUtils where
 
+import           Control.Monad.Combinators
 import           Control.Monad.State.Lazy
 import           Data.Foldable
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty       as N
-import qualified Data.Map.Strict          as M
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty        as N
+import qualified Data.Map.Strict           as M
 import           Data.Maybe
-import           Data.Text                (Text)
-import qualified Data.Text                as T
+import           Data.Text                 (Text)
+import qualified Data.Text                 as T
 import           ParserTypes
 
 
@@ -81,13 +82,16 @@ addPlaceholderVariable = insertVariable (Variable (Simple IntType) False)
 addPlaceHolderFunction :: Text -> ParserState -> ParserState
 addPlaceHolderFunction identifier = insertFunction identifier (FunctionDefinition [] (ValueReturn IntType))
 
-scoped :: ScopeType -> Parser a -> Parser a
-scoped sType p = do
-  modify (modifyScopes $ N.cons (Scope sType M.empty))
-  result <- p
-  mScopes <- snd. N.uncons <$> gets scopes
+addScope :: ScopeType -> Parser ()
+addScope sType = modify (modifyScopes $ N.cons (Scope sType M.empty))
+
+destroyScope :: Parser ()
+destroyScope = do
+  mScopes <- snd . N.uncons <$> gets scopes
   maybe (fail "Can't destroy all scopes") (\s -> modify(modifyScopes $ const s)) mScopes
-  return result
+
+scoped :: ScopeType -> Parser a -> Parser a
+scoped sType = between (addScope sType) destroyScope
 
 createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)

@@ -197,9 +197,7 @@ continueParser = do
     else fail "Continue must be inside a while or for loop."
 
 exprId :: Parser SimpleExpr
-exprId = do
-  ident <- identifier
-  return (Var ident)
+exprId = Var <$> identifier
 
 exprMemberAccess :: Parser SimpleExpr
 exprMemberAccess = do

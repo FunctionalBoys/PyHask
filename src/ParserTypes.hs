@@ -156,7 +156,9 @@ data Class = Class { className           :: Text,
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 
-data Expr = Expr SimpleExpr ComposedType deriving (Eq, Show)
+data Expr = Expr { innerExpression :: SimpleExpr,
+                   expressionType :: ComposedType
+                 } deriving (Eq,Show)
 
 data SimpleExpr =
     Var Text

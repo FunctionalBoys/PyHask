@@ -83,7 +83,7 @@ addPlaceHolderFunction :: Text -> ParserState -> ParserState
 addPlaceHolderFunction identifier = insertFunction identifier (FunctionDefinition [] (ValueReturn IntType))
 
 addScope :: ScopeType -> Parser ()
-addScope sType = modify (modifyScopes $ N.cons (Scope sType M.empty))
+addScope sType = modify (modifyScopes $ N.cons (Scope sType M.empty M.empty))
 
 destroyScope :: Parser ()
 destroyScope = do
@@ -97,7 +97,7 @@ createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
-insertVariable v ident  = modifyScope (\(Scope sType variables) -> Scope sType (M.insert ident v variables))
+insertVariable v ident  = modifyScope (\(Scope sType variables arrays) -> Scope sType (M.insert ident v variables) arrays)
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c

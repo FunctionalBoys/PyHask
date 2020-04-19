@@ -112,8 +112,9 @@ ifParser = do
       indentedCondition firstSymbol = do
         _ <- firstSymbol
         conditionalExpr <- expr
-        colonSymbol
-        indentSome (return . ConditionalBlock conditionalExpr) statement
+        if expressionType conditionalExpr == Simple BoolType
+          then colonSymbol *> indentSome (return . ConditionalBlock conditionalExpr) statement
+          else fail "Only boolean expressions can be used for conditions"
       indentedElse = elseSymbol *> indentSome return statement
 
 printParser :: Parser Statement

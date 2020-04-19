@@ -90,6 +90,7 @@ functionParser = scoped ScopeTypeFunction $ indentBlock functionBlock
       arrowSymbol
       functionReturnType <- returnType
       colonSymbol
+      modify $ insertFunction functionName (FunctionDefinition functionArguments functionReturnType)
       indentSome (return . Function functionName functionArguments functionReturnType) statement
 
 whileParser :: Parser WhileLoop

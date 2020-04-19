@@ -45,7 +45,7 @@ addPlaceholderVariable :: Text -> ParserState -> ParserState
 addPlaceholderVariable = insertVariable (Variable (Simple IntType) False)
 
 addPlaceHolderFunction :: Text -> ParserState -> ParserState
-addPlaceHolderFunction identifier (ParserState s fDefinitions c) = ParserState s (M.insert identifier (FunctionDefinition [] (ValueReturn IntType)) fDefinitions) c
+addPlaceHolderFunction identifier = insertFunction identifier (FunctionDefinition [] (ValueReturn IntType))
 
 scoped :: ScopeType -> Parser a -> Parser a
 scoped sType p = do
@@ -60,3 +60,6 @@ createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
 insertVariable v ident  = modifyScope (\(Scope sType variables) -> Scope sType (M.insert ident v variables))
+
+insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
+insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c

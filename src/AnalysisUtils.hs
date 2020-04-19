@@ -39,8 +39,8 @@ existsIdentifier :: Text -> Parser Bool
 existsIdentifier identifier = do
     c <- existsClass identifier
     f <- existsFunction identifier
-    v <- existsVariable identifier
-    return (c || f || v)
+    s <- existsInScope identifier
+    return (c || f || s)
 
 existsClass :: Text -> Parser Bool
 existsClass classIdentifier = do
@@ -52,10 +52,13 @@ existsFunction functionIdentifier = do
     definitions <- gets functionDefinitions
     return $ M.member functionIdentifier definitions
 
-existsVariable :: Text -> Parser Bool
-existsVariable variableIdentifier = do
+existsInScope :: Text -> Parser Bool
+existsInScope variableIdentifier = do
     list <- gets scopes
-    return (any (M.member variableIdentifier) (fmap scopeVariables list))
+    return $ any (elem variableIdentifier) (fmap scopeIdentifiers list)
+
+addIdentifier :: Text -> ParserState -> ParserState
+addIdentifier ident = modifyScope (\(Scope st ids v a) -> Scope st (ident:ids) v a)
 
 maybeToParser :: String -> Maybe a -> Parser a
 maybeToParser e = maybe (fail e) return
@@ -76,14 +79,11 @@ modifyScopes f (ParserState s d c) = ParserState (f s) d c
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
 modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
 
-addPlaceholderVariable :: Text -> ParserState -> ParserState
-addPlaceholderVariable = insertVariable (Variable (Simple IntType) False)
-
 addPlaceHolderFunction :: Text -> ParserState -> ParserState
 addPlaceHolderFunction identifier = insertFunction identifier (FunctionDefinition [] (ValueReturn IntType))
 
 addScope :: ScopeType -> Parser ()
-addScope sType = modify (modifyScopes $ N.cons (Scope sType M.empty M.empty))
+addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty M.empty))
 
 destroyScope :: Parser ()
 destroyScope = do
@@ -97,7 +97,7 @@ createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
-insertVariable v ident  = modifyScope (\(Scope sType variables arrays) -> Scope sType (M.insert ident v variables) arrays)
+insertVariable v ident  = modifyScope (\(Scope sType ids variables arrays) -> Scope sType ids (M.insert ident v variables) arrays)
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c

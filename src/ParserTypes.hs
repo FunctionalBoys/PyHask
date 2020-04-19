@@ -39,6 +39,7 @@ data ScopeType =
   | ScopeTypeGlobal deriving (Eq,Show)
 
 data Scope = Scope { scopeType      :: ScopeType,
+                     scopeIdentifiers :: [Text],
                      scopeVariables :: M.Map Text Variable,
                      scopeArrays    :: M.Map Text Array
                    } deriving (Eq,Show)
@@ -58,7 +59,7 @@ data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                } deriving (Eq,Show)
 
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal M.empty M.empty N.:| []) M.empty M.empty
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty M.empty N.:| []) M.empty M.empty
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr

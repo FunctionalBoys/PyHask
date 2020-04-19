@@ -47,7 +47,7 @@ newIdentifierCheck f = do
       return ident
 
 newIdentifier :: Parser Text
-newIdentifier = newIdentifierCheck addPlaceholderVariable
+newIdentifier = newIdentifierCheck addIdentifier
 
 newFunctionIdentifier :: Parser Text
 newFunctionIdentifier = newIdentifierCheck addPlaceHolderFunction

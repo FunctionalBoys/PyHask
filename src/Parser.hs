@@ -161,7 +161,7 @@ declaration = letSymbol *> do
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement
-statement = choice [ continueSymbol
+statement = choice [ continueParser
                    , breakParser
                    , passSymbol
                    , returnParser <?> "function return"
@@ -186,6 +186,7 @@ breakParser = do
     if existsFor || existsWhile
       then return break
       else fail "Break must be inside a while or for loop."
+
 continueParser :: Parser Statement
 continueParser = do
   continue <- continueSymbol

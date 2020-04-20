@@ -162,7 +162,7 @@ declaration = letSymbol *> do
 
 statement :: Parser Statement
 statement = choice [ continueSymbol
-                   , breakSymbol
+                   , breakParser
                    , passSymbol
                    , returnParser <?> "function return"
                    , ObjectAssignmentStatement <$> try objectAssignment <?> "object assignment"
@@ -186,6 +186,14 @@ breakParser = do
     if existsFor || existsWhile
       then return break
       else fail "Break must be inside a while or for loop."
+continueParser :: Parser Statement
+continueParser = do
+  continue <- continueSymbol
+  existsFor <- existsScope ScopeTypeFor
+  existsWhile <- existsScope ScopeTypeWhile
+  if existsFor || existsWhile
+    then return continue
+    else fail "Continue must be inside a while or for loop."
 
 exprId :: Parser SimpleExpr
 exprId = do

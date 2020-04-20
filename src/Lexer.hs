@@ -114,7 +114,7 @@ charSymbol :: Parser SimpleType
 charSymbol = CharType <$ reservedWord "char"
 
 stringSymbol :: Parser SimpleType
-stringSymbol = CharType <$ reservedWord "string"
+stringSymbol = StringType <$ reservedWord "string"
 
 voidSymbol :: Parser ReturnType
 voidSymbol = VoidReturn <$ reservedWord "void"

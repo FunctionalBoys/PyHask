@@ -23,6 +23,7 @@ exprCheck (Var ident) = do
 exprCheck (IntLiteral integer) = return (Expr (IntLiteral integer) (Simple IntType))
 exprCheck (FloatLiteral float) = return (Expr (FloatLiteral float) (Simple FloatType))
 exprCheck (BoolLiteral bool) = return (Expr (BoolLiteral bool) (Simple BoolType))
+exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (Simple StringType))
 exprCheck (Not sExpr) = do
   (Expr cExpr cType) <- exprCheck sExpr
   if cType == Simple BoolType

@@ -34,6 +34,15 @@ exprCheck (Neg sExpr) = do
   if cType == Simple IntType || cType == Simple FloatType
     then return (Expr (Neg cExpr) cType)
     else fail "Only numeric values have a negative"
+exprCheck (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) = do
+  array <- findArray ident
+  if integer >= arraySize array
+    then fail "Index out of bounds"
+    else return (Expr (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) (Simple (arrayType array)))
+exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType))) = do
+  array <- findArray ident
+  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType))) (Simple (arrayType array)))
+exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
 exprCheck e = return $ Expr e (Simple IntType)
 
 existsIdentifier :: Text -> Parser Bool
@@ -72,7 +81,12 @@ findVariable ident = do
 existsScope :: ScopeType -> Parser Bool
 existsScope scopeT = do
   scopeTypes <- fmap scopeType <$> gets scopes
-  return (elem scopeT scopeTypes)
+  return (scopeT `elem` scopeTypes)
+
+findArray :: Text -> Parser Array
+findArray ident = do
+  maps <- fmap scopeArrays <$> gets scopes
+  maybeToParser ("Array " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
 modifyScopes f (ParserState s d c) = ParserState (f s) d c

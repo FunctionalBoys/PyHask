@@ -1,5 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Parser (parseProgram) where
 
@@ -11,6 +11,7 @@ import           Data.Bifunctor
 import           Data.Default.Class
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
+import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Lexer
@@ -138,9 +139,11 @@ readParser = do
 functionCallParser :: Parser FunctionCall
 functionCallParser = do
   functionCallName <- identifier
+  fArgumentsType <- fmap (Simple . argumentType) . functionDefinitionArguments <$> findFunction functionCallName
   functionCallArguments <- parens $ sepBy expr commaSymbol
-  return FunctionCall{..}
-
+  if fArgumentsType == fmap expressionType functionCallArguments
+    then return FunctionCall{..}
+    else fail "Argument types do not match"
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier
@@ -153,7 +156,15 @@ returnParser :: Parser Statement
 returnParser = do
   returnSymbol
   mExpr <- optional expr
-  return (ReturnStatement mExpr)
+  let rExpr = fromMaybe VoidReturn (mExpr >>= check)
+  fName <- findScopeFunctionName
+  rType <- functionDefinitionReturnType <$> findFunction fName
+  if rExpr == rType
+    then return (ReturnStatement mExpr)
+    else fail "Return type does not match function type"
+  where
+    check (Expr _ (Simple sType)) = Just (ValueReturn sType)
+    check _                       = Nothing
 
 declaration :: Parser Declaration
 declaration = letSymbol *> do

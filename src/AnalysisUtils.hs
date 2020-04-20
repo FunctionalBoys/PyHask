@@ -88,6 +88,19 @@ findArray ident = do
   maps <- fmap scopeArrays <$> gets scopes
   maybeToParser ("Array " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
+findFunction :: Text -> Parser FunctionDefinition
+findFunction fName = do
+  fDefinitions <- gets functionDefinitions
+  maybeToParser ("Function " ++ T.unpack fName ++ " doesn't exist") (M.lookup fName fDefinitions)
+
+findScopeFunctionName :: Parser Text
+findScopeFunctionName = do
+  sTypes <- fmap scopeType <$> gets scopes
+  maybeToParser "No parent function" $ asum $ fmap f sTypes
+  where
+    f (ScopeTypeFunction fName) = Just fName
+    f _                         = Nothing
+
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
 modifyScopes f (ParserState s d c) = ParserState (f s) d c
 

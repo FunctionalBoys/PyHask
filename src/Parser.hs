@@ -79,6 +79,7 @@ functionArgument = do
   argumentName <- newIdentifier
   colonSymbol
   argumentType <- simpleType
+  modify $ insertVariable (Variable (Simple argumentType) True) argumentName
   return FunctionArgument{..}
 
 functionParser :: Parser Function
@@ -319,11 +320,12 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
   where
     forBlock = do
       forSymbol
-      forDeclaration <- sepBy1 identifier commaSymbol
+      forDeclaration <- sepBy1 newIdentifier commaSymbol
       colonSymbol
       forDeclarationType <- simpleType
       equalSymbol
       forDeclarationExpr <- expr
+      forM_ forDeclaration (modify . insertVariable (createVariable (Simple forDeclarationType) (Just forDeclarationExpr)))
       if expressionType forDeclarationExpr == Simple forDeclarationType
         then return ()
         else fail "Expression type must be the same as the declaration type"

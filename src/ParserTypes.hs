@@ -33,7 +33,7 @@ data ScopeType =
     ScopeTypeFor
   | ScopeTypeConditional
   | ScopeTypeWhile
-  | ScopeTypeFunction
+  | ScopeTypeFunction Text
   | ScopeTypeMain
   | ScopeTypeClass
   | ScopeTypeGlobal deriving (Eq,Show)

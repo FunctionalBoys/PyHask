@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Parser (parseProgram) where
 
@@ -81,11 +82,12 @@ functionArgument = do
   return FunctionArgument{..}
 
 functionParser :: Parser Function
-functionParser = scoped ScopeTypeFunction $ indentBlock functionBlock
+functionParser = scoped (ScopeTypeFunction "") $ indentBlock functionBlock
   where
     functionBlock = do
       defSymbol
       functionName <- newFunctionIdentifier
+      modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeFunction functionName) ids vars arrs)
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType

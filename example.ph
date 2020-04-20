@@ -15,10 +15,10 @@ class Hola:
 
 def g(i : int) -> int:
   let b : bool := True
-  if i > 100:
+  if True:
     return 5
-  for j :int := 0 : j < 10 : j := j + 1:
-    if i < 5 and j > 2:
+  for j :int := 0 : True : j := j + 1:
+    if False:
       i := 200
       break
     else
@@ -27,6 +27,6 @@ def g(i : int) -> int:
 
 main:
   create a : Hola()
-  pass
+  g(2)
   while True:
     print(1)

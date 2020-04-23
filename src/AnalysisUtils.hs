@@ -47,6 +47,11 @@ exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
   fDefinition <- findFunction fName
   returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
   return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) (returnType))
+exprCheck (FloatConversion sExpr) = do
+  value <- exprCheck sExpr
+  if(expressionType value == Simple IntType)
+    then return (Expr (FloatConversion sExpr) (Simple FloatType))
+    else fail $ "Only Int types can be converted to Float"
 
 getValueReturn :: ReturnType -> Parser ComposedType
 getValueReturn (ValueReturn sType) = return (Simple sType)

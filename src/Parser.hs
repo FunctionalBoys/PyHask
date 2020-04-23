@@ -144,6 +144,7 @@ functionCallParser = do
   if fArgumentsType == fmap expressionType functionCallArguments
     then return FunctionCall{..}
     else fail "Argument types do not match"
+
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier
@@ -200,22 +201,18 @@ statement = choice [ continueParser
                    , readParser]
 
 breakParser :: Parser Statement
-breakParser = do
-    break <- breakSymbol
-    existsFor <- existsScope ScopeTypeFor
-    existsWhile <- existsScope ScopeTypeWhile
-    if existsFor || existsWhile
-      then return break
-      else fail "Break must be inside a while or for loop."
+breakParser = breakSymbol <* insideLoop "break"
 
 continueParser :: Parser Statement
-continueParser = do
-  continue <- continueSymbol
+continueParser = continueSymbol <* insideLoop "continue"
+
+insideLoop :: Text -> Parser ()
+insideLoop symbolName = do
   existsFor <- existsScope ScopeTypeFor
   existsWhile <- existsScope ScopeTypeWhile
   if existsFor || existsWhile
-    then return continue
-    else fail "Continue must be inside a while or for loop."
+    then return ()
+    else fail $ T.unpack symbolName ++ " must be inside a loop"
 
 exprId :: Parser SimpleExpr
 exprId = Var <$> identifier

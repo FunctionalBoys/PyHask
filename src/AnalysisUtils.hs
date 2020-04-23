@@ -43,7 +43,14 @@ exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType))) = do
   array <- findArray ident
   return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType))) (Simple (arrayType array)))
 exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
-exprCheck e = return $ Expr e (Simple IntType)
+exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
+  fDefinition <- findFunction fName
+  returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
+  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) (returnType))
+
+getValueReturn :: ReturnType -> Parser ComposedType
+getValueReturn (ValueReturn sType) = return (Simple sType)
+getValueReturn _ = fail $ "Only functions that return values can be used in expression."
 
 exprSimpleType :: Expr -> Parser Expr
 exprSimpleType (Expr sExpr (Simple sType)) = return (Expr sExpr (Simple sType))

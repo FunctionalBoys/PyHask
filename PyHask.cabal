@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dc972c8ad087ac6edac1719fd068a7f4665be849b7ae33137fdf883d962a81f7
+-- hash: 2ddd0965d554fa65eb3ab30871df9aa4ec785b4eb4d36c89126844ea894c0947
 
 name:           PyHask
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Paths_PyHask
   hs-source-dirs:
       src
+  ghc-options: -Wall -Werror
   build-depends:
       base >=4.7 && <5
     , containers

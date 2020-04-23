@@ -142,7 +142,7 @@ functionCallParser = do
   if fArgumentsType == fmap expressionType functionCallArguments
     then return FunctionCall{..}
     else fail "Argument types do not match"
-
+    
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier

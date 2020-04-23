@@ -182,6 +182,7 @@ data SimpleExpr =
   | Neg SimpleExpr
   | StringLiteral Text
   | Operate Op SimpleExpr SimpleExpr
+  | FloatConversion SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)
 
 data WhileLoop = WhileLoop { whileCondition  :: Expr,

@@ -360,7 +360,7 @@ classConstructorParameter = do
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
-classConstructorParser = scoped ScopeTypeClass $ indentBlock indentedConstructor
+classConstructorParser = indentBlock indentedConstructor
   where
     indentedConstructor = do
       _ <- identifier
@@ -394,11 +394,12 @@ classInitializationParser = indentBlock initBlock
     checkConstructor _ = fail "Constructor is required"
 
 classParser :: Parser Class
-classParser = indentBlock classBlock
+classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
   where
     classBlock = do
       classSymbol
       className <- identifier
+      modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeClass className) ids vars arrs)
       classFather <- optional $ parens identifier
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper

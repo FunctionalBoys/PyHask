@@ -45,6 +45,10 @@ exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType))) = do
 exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
 exprCheck e = return $ Expr e (Simple IntType)
 
+exprSimpleType :: Expr -> Parser Expr
+exprSimpleType (Expr sExpr (Simple sType)) = return (Expr sExpr (Simple sType))
+exprSimpleType _ = fail "Expected a simple type"
+
 existsIdentifier :: Text -> Parser Bool
 existsIdentifier identifier = do
     c <- existsClass identifier

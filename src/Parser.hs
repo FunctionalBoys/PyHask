@@ -123,7 +123,7 @@ ifParser = do
 printParser :: Parser Statement
 printParser = do
   printSymbol
-  e <- parens expr
+  e <- parens $ expr >>= exprSimpleType
   return (PrintStatement e)
 
 readParser :: Parser Statement

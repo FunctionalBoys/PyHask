@@ -1,12 +1,11 @@
-let a : int := 1
+let x : int := 1
 
 def h() -> void:
   pass
 
 class Hola:
   init:
-    Hola():
-      super() # Comment
+    Hola(i: int):
       pass
 
   def f(d : float) -> int:
@@ -26,7 +25,7 @@ def g(i : int) -> int:
   return 2
 
 main:
-  create a : Hola()
+  create a : Hola(5)
   g(2)
   while True:
     print(1)

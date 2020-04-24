@@ -43,10 +43,7 @@ newIdentifierCheck f = do
   exists <- existsIdentifier ident
   if exists
     then fail ("Identifier " ++ T.unpack ident ++ " already defined")
-  else
-    do
-      modify (f ident)
-      return ident
+    else ident <$ modify (f ident)
 
 newIdentifier :: Parser Text
 newIdentifier = newIdentifierCheck addIdentifier

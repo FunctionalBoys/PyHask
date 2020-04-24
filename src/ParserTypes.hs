@@ -24,6 +24,7 @@ data Variable = Variable {  variableType :: ComposedType,
                             variableInit :: Bool
                          } deriving (Eq,Show)
 
+-- TODO: This is redundant, remove and fix using ComposedType
 data Array = Array { arrayType :: SimpleType,
                      arraySize :: Int,
                      arrayInit :: Bool
@@ -38,10 +39,10 @@ data ScopeType =
   | ScopeTypeClass Text
   | ScopeTypeGlobal deriving (Eq,Show)
 
-data Scope = Scope { scopeType      :: ScopeType,
+data Scope = Scope { scopeType        :: ScopeType,
                      scopeIdentifiers :: [Text],
-                     scopeVariables :: M.Map Text Variable,
-                     scopeArrays    :: M.Map Text Array
+                     scopeVariables   :: M.Map Text Variable,
+                     scopeArrays      :: M.Map Text Array
                    } deriving (Eq,Show)
 
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],

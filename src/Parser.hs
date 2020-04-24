@@ -304,6 +304,7 @@ simpleAssignment = do
     else fail "The types of the expression and assignment doesn't match."
   return (SimpleAssignment i e)
 
+-- TODO: Expression check missing
 arrayAssignmet :: Parser ArrayAssignment
 arrayAssignmet = do
   i <- identifier
@@ -381,6 +382,7 @@ classConstructorParser = indentBlock indentedConstructor >>= addClassConstructor
                                     , ConstructorObjectAssignment <$> try objectAssignment
                                     , ConstructorArrayAssignment <$> try arrayAssignmet]
     helper = ConstructorSuper <$> superConstructor <|> ConstructorAssignment <$> constructorAssignments
+    -- TODO: check super is only used if there is a parent class
     listToConstructor f (ConstructorSuper x N.:| xs) = f (Just x) <$> traverse checkAssignment xs
     listToConstructor f xs = f Nothing <$> traverse checkAssignment (N.toList xs)
     checkAssignment (ConstructorAssignment x) = return x

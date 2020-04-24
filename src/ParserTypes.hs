@@ -48,10 +48,6 @@ data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [
                                                functionDefinitionReturnType :: ReturnType
                                             } deriving (Eq,Show)
 
-data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
-                                         classDefinitionInitialization  :: ClassInitialization,
-                                         classDefinitionMethods         :: [FunctionDefinition]
-                                       } deriving (Eq,Show)
 
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                  functionDefinitions  :: M.Map Text FunctionDefinition,
@@ -160,6 +156,12 @@ data Class = Class { className           :: Text,
                      classInitialization :: ClassInitialization,
                      classMethods        :: [Function]
                    } deriving (Eq,Show)
+
+data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
+                                         classDefinitionMembers         :: [ClassMember],
+                                         classDefinitionConstructor     :: ClassConstructor,
+                                         classDefinitionMethods         :: [FunctionDefinition]
+                                       } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
 

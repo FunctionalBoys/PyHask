@@ -121,9 +121,6 @@ modifyScopes f (ParserState s d c) = ParserState (f s) d c
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
 modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
 
-addPlaceHolderFunction :: Text -> ParserState -> ParserState
-addPlaceHolderFunction identifier = insertFunction identifier (FunctionDefinition [] (ValueReturn IntType))
-
 addScope :: ScopeType -> Parser ()
 addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty M.empty))
 

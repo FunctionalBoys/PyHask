@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -48,9 +49,6 @@ newIdentifierCheck f = do
 newIdentifier :: Parser Text
 newIdentifier = newIdentifierCheck addIdentifier
 
-newFunctionIdentifier :: Parser Text
-newFunctionIdentifier = newIdentifierCheck addPlaceHolderFunction
-
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
 
@@ -85,14 +83,17 @@ functionParser = scoped (ScopeTypeFunction "") $ indentBlock functionBlock
   where
     functionBlock = do
       defSymbol
-      functionName <- newFunctionIdentifier
+      functionName <- newIdentifier
       modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeFunction functionName) ids vars arrs)
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType
       colonSymbol
-      modify $ insertFunction functionName (FunctionDefinition functionArguments functionReturnType)
+      let fDefinition = FunctionDefinition functionArguments functionReturnType
+      maybeClass <- maybeInsideClass
+      maybe (modify $ insertFunction functionName fDefinition) (f fDefinition) maybeClass
       indentSome (return . Function functionName functionArguments functionReturnType) statement
+    f fDefinition clsName = modify $ insertMethodToClass clsName fDefinition
 
 whileParser :: Parser WhileLoop
 whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
@@ -347,20 +348,25 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
 classMember :: Parser ClassMember
 classMember = do
   letSymbol
-  memberIdentifier <- identifier
+  memberIdentifier <- newIdentifier
   colonSymbol
   memberType <- composedType
-  return ClassMember{..}
+  addClassMember ClassMember{..}
+  where
+    addClassMember member = do
+      className <- findScopeClassName
+      modify $ insertMemberToClass className member
+      return member
 
 classConstructorParameter :: Parser ClassConstructorParameter
 classConstructorParameter = do
-  classConstructorParameterId <- identifier
+  classConstructorParameterId <- newIdentifier
   colonSymbol
   classConstructorParemeterType <- composedType
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
-classConstructorParser = indentBlock indentedConstructor
+classConstructorParser = indentBlock indentedConstructor >>= addClassConstructor
   where
     indentedConstructor = do
       _ <- identifier
@@ -379,6 +385,10 @@ classConstructorParser = indentBlock indentedConstructor
     listToConstructor f xs = f Nothing <$> traverse checkAssignment (N.toList xs)
     checkAssignment (ConstructorAssignment x) = return x
     checkAssignment _                         = fail "Expected assignment"
+    addClassConstructor constructor = do
+      className <- findScopeClassName
+      modify $ insertConstructorToClass className constructor
+      return constructor
 
 classInitializationParser :: Parser ClassInitialization
 classInitializationParser = indentBlock initBlock
@@ -393,14 +403,21 @@ classInitializationParser = indentBlock initBlock
     checkConstructor (ClassConstructorHelper x) = return x
     checkConstructor _ = fail "Constructor is required"
 
+fatherClass :: Parser Text
+fatherClass = do
+  ident <- identifier
+  _ <- findClass ident
+  return ident
+
 classParser :: Parser Class
 classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
   where
     classBlock = do
       classSymbol
-      className <- identifier
+      className <- newIdentifier
       modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeClass className) ids vars arrs)
-      classFather <- optional $ parens identifier
+      classFather <- optional $ parens fatherClass
+      modify $ insertClassDefinition className (emptyClassDefinition classFather)
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper
     helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser

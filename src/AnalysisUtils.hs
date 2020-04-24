@@ -101,6 +101,20 @@ findScopeFunctionName = do
     f (ScopeTypeFunction fName) = Just fName
     f _                         = Nothing
 
+maybeClassName :: ScopeType -> Maybe Text
+maybeClassName (ScopeTypeClass name) = Just name
+maybeClassName _                     = Nothing
+
+findScopeClassName :: Parser Text
+findScopeClassName = do
+  sTypes <- gets $ fmap scopeType . scopes
+  maybeToParser "Not inside class" $ asum $ fmap maybeClassName sTypes
+
+maybeInsideClass :: Parser (Maybe Text)
+maybeInsideClass = do
+  sTypes <- gets $ fmap scopeType . scopes
+  return $ asum $ fmap maybeClassName sTypes
+
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
 modifyScopes f (ParserState s d c) = ParserState (f s) d c
 
@@ -135,3 +149,29 @@ insertArray a ident = modifyScope (\(Scope sType ids variables arrays) -> Scope 
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c
+
+insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
+insertClassDefinition ident cls (ParserState s fs cDefinitions) = ParserState s fs (M.insert ident cls cDefinitions)
+
+emptyClassDefinition :: Maybe Text -> ClassDefinition
+emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) []
+
+findClass :: Text -> Parser ClassDefinition
+findClass cName = do
+  cDefinitions <- gets classDefinitions
+  maybeToParser ("Class " ++ T.unpack cName ++ " doesn't exist") (M.lookup cName cDefinitions)
+
+insertMemberToClass :: Text -> ClassMember -> ParserState -> ParserState
+insertMemberToClass clsName member (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+  where
+    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father (member:members) constructor methods)
+
+insertMethodToClass :: Text -> FunctionDefinition -> ParserState -> ParserState
+insertMethodToClass clsName method (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+  where
+    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father members constructor (method:methods))
+
+insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
+insertConstructorToClass clsName constructor (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+  where
+    updateF (ClassDefinition father members _ methods) = Just (ClassDefinition father members constructor methods)

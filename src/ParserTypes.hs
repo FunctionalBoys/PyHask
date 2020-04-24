@@ -133,7 +133,7 @@ data ClassConstructorAssignment =
   | ConstructorPass deriving (Eq,Show)
 
 data ClassConstructorParameter = ClassConstructorParameter { classConstructorParameterId :: Text,
-                                                             classConstructorParemeterType :: ComposedType
+                                                             classConstructorParameterType :: ComposedType
                                                            } deriving (Eq,Show)
 
 data ClassConstructorHelper = ConstructorSuper [Text] | ConstructorAssignment ClassConstructorAssignment
@@ -204,7 +204,7 @@ data Conditional = Conditional { ifBlock    :: ConditionalBlock,
                                  elseBlock  :: Maybe (NonEmpty Statement)
                                } deriving (Eq,Show)
 
-data CreateObject = CreateObject {  variableName :: Text,
-                                    objectName   :: Text,
-                                    identifiers  :: [Text]
+data CreateObject = CreateObject {  createObjectVariableName :: Text,
+                                    createObjectClassName   :: Text,
+                                    createObjectExpressions  :: [Expr]
                                 } deriving (Eq,Show)

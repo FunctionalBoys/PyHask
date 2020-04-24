@@ -362,7 +362,7 @@ classConstructorParameter :: Parser ClassConstructorParameter
 classConstructorParameter = do
   classConstructorParameterId <- newIdentifier
   colonSymbol
-  classConstructorParemeterType <- composedType
+  classConstructorParameterType <- composedType
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
@@ -403,8 +403,8 @@ classInitializationParser = indentBlock initBlock
     checkConstructor (ClassConstructorHelper x) = return x
     checkConstructor _ = fail "Constructor is required"
 
-fatherClass :: Parser Text
-fatherClass = do
+checkIdentifierClass :: Parser Text
+checkIdentifierClass = do
   ident <- identifier
   _ <- findClass ident
   return ident
@@ -416,7 +416,7 @@ classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
       classSymbol
       className <- newIdentifier
       modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeClass className) ids vars arrs)
-      classFather <- optional $ parens fatherClass
+      classFather <- optional $ parens checkIdentifierClass
       modify $ insertClassDefinition className (emptyClassDefinition classFather)
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper
@@ -429,8 +429,13 @@ classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
 createObjectParser :: Parser CreateObject
 createObjectParser =  do
   createSymbol
-  variableName <- identifier
+  variableName <- newIdentifier
   colonSymbol
-  objectName <- identifier
-  identifiers <- parens $ sepBy identifier commaSymbol
-  return (CreateObject variableName objectName identifiers)
+  clsName <- checkIdentifierClass
+  cls <- findClass clsName
+  exprs <- parens $ sepBy expr commaSymbol
+  let exprsTypes = expressionType <$> exprs
+  let constructorTypes = classConstructorParameterType <$> (classConstructorParameters . classDefinitionConstructor) cls
+  if exprsTypes == constructorTypes
+    then return (CreateObject variableName clsName exprs)
+    else fail "Expressions for constructor do not match"

@@ -64,10 +64,29 @@ combineExpressions :: Op -> Expr -> Expr -> Parser Expr
 combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple IntType))
 combineExpressions Sum (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
 combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple IntType))
-combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
-combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
-combineExpressions _ _ _= fail "No"
+combineExpressions Sum (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
+combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Minus sExpr1 sExpr2) (Simple IntType))
+combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Minus sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Minus (FloatConversion sExpr1) sExpr2) (Simple FloatType))
+combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Minus sExpr1 sExpr2) (Simple FloatType))
+combineExpressions Times (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Times sExpr1 sExpr2) (Simple IntType))
+combineExpressions Times (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Times sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Times (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Times (FloatConversion sExpr1) sExpr2) (Simple FloatType))
+combineExpressions Times (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Times sExpr1 sExpr2) (Simple FloatType))
+combineExpressions Div (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Div (FloatConversion sExpr1) (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Div (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Div sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Div (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Div (FloatConversion sExpr1) sExpr2) (Simple FloatType))
+combineExpressions Div (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return  (Expr (Operate Div sExpr1 sExpr2) (Simple FloatType))
+combineExpressions Exp (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Exp (FloatConversion sExpr1) (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Exp (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Exp sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Exp (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Exp (FloatConversion sExpr1) sExpr2) (Simple FloatType))
+combineExpressions Exp (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Exp sExpr1 sExpr2) (Simple FloatType))
+combineExpressions And (Expr sExpr1 (Simple BoolType)) (Expr sExpr2 (Simple BoolType)) = return (Expr (Operate And sExpr1 sExpr2) (Simple BoolType))
+combineExpressions Or (Expr sExpr1 (Simple BoolType)) (Expr sExpr2 (Simple BoolType)) = return (Expr (Operate Or sExpr1 sExpr2) (Simple BoolType))
+combineExpressions _ (Expr _ (ClassType _)) (Expr _ (ClassType _)) = fail "No operators available between classes."
+combineExpressions op (Expr sExpr1 t1) (Expr sExpr2 t2) 
+  | t1 == t2 && (t1 == (Simple IntType) || t1 == (Simple FloatType)) && (t2 == (Simple IntType) || t2 == (Simple FloatType)) = return (Expr (Operate op sExpr1 sExpr2) (Simple BoolType))
+  | otherwise = fail "Types can not be compared."
 
 
 getValueReturn :: ReturnType -> Parser ComposedType

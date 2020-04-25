@@ -52,6 +52,23 @@ exprCheck (FloatConversion sExpr) = do
   if(expressionType value == Simple IntType)
     then return (Expr (FloatConversion sExpr) (Simple FloatType))
     else fail $ "Only Int types can be converted to Float"
+exprCheck (MemberAccess t1 t2) = return (Expr (MemberAccess t1 t2) (Simple IntType))
+exprCheck (MethodCallExpr _) = return (Expr (IntLiteral 1) (Simple IntType))
+exprCheck (Operate op sExpr1 sExpr2) = do
+  expr1 <- exprCheck sExpr1
+  expr2 <- exprCheck sExpr2
+  combineExpressions op expr1 expr2
+
+-- Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or
+combineExpressions :: Op -> Expr -> Expr -> Parser Expr
+combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple IntType))
+combineExpressions Sum (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
+combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum (FloatConversion sExpr1) sExpr2) (Simple FloatType))
+combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple IntType))
+combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
+combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
+combineExpressions _ _ _= fail "No"
+
 
 getValueReturn :: ReturnType -> Parser ComposedType
 getValueReturn (ValueReturn sType) = return (Simple sType)

@@ -22,6 +22,11 @@ def g(i : int) -> int:
       break
     else
       continue
+  
+  let c : int := 5
+  if c == 5:
+    return 1
+
   return 2
 
 main:

@@ -16,7 +16,7 @@ import           ParserTypes
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck (Var ident) = do
   (Variable vType initialized) <- findVariable ident
-  if initialized
+  if not initialized
     then fail $ "Can't use uninitailized variable " ++ T.unpack ident
   else
     return (Expr (Var ident) vType)

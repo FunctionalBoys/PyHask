@@ -84,7 +84,7 @@ functionParser = scoped (ScopeTypeFunction "") $ indentBlock functionBlock
     functionBlock = do
       defSymbol
       functionName <- newIdentifier
-      modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeFunction functionName) ids vars arrs)
+      modify $ modifyScope (\(Scope _ ids vars) -> Scope (ScopeTypeFunction functionName) ids vars)
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType
@@ -174,10 +174,8 @@ declaration = letSymbol *> do
     then return ()
     else fail "Expression must match type"
   case idType of
-    Simple _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
-    ArrayType sType sz -> forM_ identifiers (modify . insertArray (createArray sType sz rExpr))
-    -- TODO: Manage objects
-    ClassType _ -> return ()
+    ClassType _ -> fail "Use create statement for object declaration"
+    _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement
@@ -417,7 +415,7 @@ classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
     classBlock = do
       classSymbol
       className <- newIdentifier
-      modify $ modifyScope (\(Scope _ ids vars arrs) -> Scope (ScopeTypeClass className) ids vars arrs)
+      modify $ modifyScope (\(Scope _ ids vars) -> Scope (ScopeTypeClass className) ids vars)
       classFather <- optional $ parens checkIdentifierClass
       modify $ insertClassDefinition className (emptyClassDefinition classFather)
       colonSymbol

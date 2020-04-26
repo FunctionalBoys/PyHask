@@ -35,13 +35,13 @@ exprCheck (Neg sExpr) = do
     then return (Expr (Neg cExpr) cType)
     else fail "Only numeric values have a negative"
 exprCheck (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) = do
-  array <- findArray ident
-  if integer >= arraySize array
+  (aType,sz) <- getArrayInfo ident
+  if integer >= sz
     then fail "Index out of bounds"
-    else return (Expr (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) (Simple (arrayType array)))
+    else return (Expr (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) (Simple aType))
 exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType))) = do
-  array <- findArray ident
-  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType))) (Simple (arrayType array)))
+  (aType,_) <- getArrayInfo ident
+  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType))) (Simple aType))
 exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
 exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
   fDefinition <- findFunction fName
@@ -91,7 +91,7 @@ combineExpressions op (Expr sExpr1 t1) (Expr sExpr2 t2)
 
 getValueReturn :: ReturnType -> Parser ComposedType
 getValueReturn (ValueReturn sType) = return (Simple sType)
-getValueReturn _ = fail $ "Only functions that return values can be used in expression."
+getValueReturn _ = fail "Only functions that return values can be used in expression."
 
 exprSimpleType :: Expr -> Parser Expr
 exprSimpleType (Expr sExpr (Simple sType)) = return (Expr sExpr (Simple sType))
@@ -120,7 +120,7 @@ existsInScope variableIdentifier = do
     return $ any (elem variableIdentifier) (fmap scopeIdentifiers list)
 
 addIdentifier :: Text -> ParserState -> ParserState
-addIdentifier ident = modifyScope (\(Scope st ids v a) -> Scope st (ident:ids) v a)
+addIdentifier ident = modifyScope (\(Scope st ids v) -> Scope st (ident:ids) v)
 
 maybeToParser :: String -> Maybe a -> Parser a
 maybeToParser e = maybe (fail e) return
@@ -130,15 +130,17 @@ findVariable ident = do
   maps <- fmap scopeVariables <$> gets scopes
   maybeToParser ("Variable " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
+getArrayInfoFromType :: ComposedType -> Parser (SimpleType, Int)
+getArrayInfoFromType (ArrayType sType sz) = return (sType, sz)
+getArrayInfoFromType _ = fail "Type is not an array"
+
+getArrayInfo :: Text -> Parser (SimpleType, Int)
+getArrayInfo ident = (variableType <$> findVariable ident) >>= getArrayInfoFromType
+
 existsScope :: ScopeType -> Parser Bool
 existsScope scopeT = do
   scopeTypes <- fmap scopeType <$> gets scopes
   return (scopeT `elem` scopeTypes)
-
-findArray :: Text -> Parser Array
-findArray ident = do
-  maps <- fmap scopeArrays <$> gets scopes
-  maybeToParser ("Array " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
 findFunction :: Text -> Parser FunctionDefinition
 findFunction fName = do
@@ -174,7 +176,7 @@ modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
 modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
 
 addScope :: ScopeType -> Parser ()
-addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty M.empty))
+addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty))
 
 destroyScope :: Parser ()
 destroyScope = do
@@ -187,14 +189,8 @@ scoped sType = between (addScope sType) destroyScope
 createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
-createArray :: SimpleType -> Int -> Maybe Expr -> Array
-createArray aType sz expr = Array aType sz (isJust expr)
-
 insertVariable :: Variable -> Text -> ParserState -> ParserState
-insertVariable v ident  = modifyScope (\(Scope sType ids variables arrays) -> Scope sType ids (M.insert ident v variables) arrays)
-
-insertArray :: Array -> Text -> ParserState -> ParserState
-insertArray a ident = modifyScope (\(Scope sType ids variables arrays) -> Scope sType ids variables (M.insert ident a arrays))
+insertVariable v ident  = modifyScope (\(Scope sType ids variables) -> Scope sType ids (M.insert ident v variables))
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c

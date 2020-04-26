@@ -24,12 +24,6 @@ data Variable = Variable {  variableType :: ComposedType,
                             variableInit :: Bool
                          } deriving (Eq,Show)
 
--- TODO: This is redundant, remove and fix using ComposedType
-data Array = Array { arrayType :: SimpleType,
-                     arraySize :: Int,
-                     arrayInit :: Bool
-                   } deriving (Eq,Show)
-
 data ScopeType =
     ScopeTypeFor
   | ScopeTypeConditional
@@ -41,8 +35,7 @@ data ScopeType =
 
 data Scope = Scope { scopeType        :: ScopeType,
                      scopeIdentifiers :: [Text],
-                     scopeVariables   :: M.Map Text Variable,
-                     scopeArrays      :: M.Map Text Array
+                     scopeVariables   :: M.Map Text Variable
                    } deriving (Eq,Show)
 
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
@@ -56,7 +49,7 @@ data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                } deriving (Eq,Show)
 
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal [] M.empty M.empty N.:| []) M.empty M.empty
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty N.:| []) M.empty M.empty
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr

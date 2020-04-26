@@ -15,6 +15,7 @@ import qualified Data.List.NonEmpty                 as N
 import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
+import           Expressions
 import           Lexer
 import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
@@ -142,7 +143,7 @@ functionCallParser = do
   if fArgumentsType == fmap expressionType functionCallArguments
     then return FunctionCall{..}
     else fail "Argument types do not match"
-    
+
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier

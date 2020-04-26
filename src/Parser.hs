@@ -332,14 +332,10 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
       equalSymbol
       forDeclarationExpr <- expr
       forM_ forDeclaration (modify . insertVariable (createVariable (Simple forDeclarationType) (Just forDeclarationExpr)))
-      if expressionType forDeclarationExpr == Simple forDeclarationType
-        then return ()
-        else fail "Expression type must be the same as the declaration type"
+      guardFail (expressionType forDeclarationExpr == Simple forDeclarationType) "Expression type must be the same as the declaration type"
       colonSymbol
       forCondition <- expr
-      if expressionType forCondition == Simple BoolType
-        then return ()
-        else fail "Only boolean expressions can be used in for condition"
+      guardFail (expressionType forCondition == Simple BoolType) "Only boolean expressions can be used in for condition"
       colonSymbol
       forAssigment <- simpleAssignment
       colonSymbol

@@ -125,6 +125,10 @@ addIdentifier ident = modifyScope (\(Scope st ids v) -> Scope st (ident:ids) v)
 maybeToParser :: String -> Maybe a -> Parser a
 maybeToParser e = maybe (fail e) return
 
+guardFail :: Bool -> String -> Parser ()
+guardFail True _ = return ()
+guardFail False s = fail s
+
 findVariable :: Text -> Parser Variable
 findVariable ident = do
   maps <- fmap scopeVariables <$> gets scopes

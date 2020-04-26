@@ -297,18 +297,18 @@ simpleAssignment = do
   variable <- findVariable i
   equalSymbol
   e <- expr
-  if expressionType e == variableType variable
-    then return ()
-    else fail "The types of the expression and assignment doesn't match."
+  guardFail (expressionType e == variableType variable) "The types of the expression and assignment doesn't match."
   return (SimpleAssignment i e)
 
--- TODO: Expression check missing
 arrayAssignmet :: Parser ArrayAssignment
 arrayAssignmet = do
   i <- identifier
+  (aType, _) <- getArrayInfo i
   a <- brackets expr
+  guardFail (expressionType a == Simple IntType) "Index must be of type int"
   equalSymbol
   e <- expr
+  guardFail (expressionType e == Simple aType) "Expression must match array type"
   return (ArrayAssignment i a e)
 
 objectAssignment :: Parser ObjectAssignment

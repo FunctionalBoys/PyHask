@@ -312,6 +312,7 @@ arrayAssignmet = do
   guardFail (expressionType e == Simple aType) "Expression must match array type"
   return (ArrayAssignment i a e)
 
+-- TODO: Check this after memory layout is decided
 objectAssignment :: Parser ObjectAssignment
 objectAssignment = do
   obj <- identifier

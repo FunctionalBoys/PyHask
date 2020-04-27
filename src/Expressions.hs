@@ -3,6 +3,7 @@ module Expressions where
 import           AnalysisUtils
 import qualified Data.Text     as T
 import           ParserTypes
+import qualified Data.Map as M
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck (Var ident) = do
@@ -43,8 +44,17 @@ exprCheck (FloatConversion sExpr) = do
   if expressionType value == Simple IntType
     then return (Expr (FloatConversion sExpr) (Simple FloatType))
     else fail "Only Int types can be converted to Float"
-exprCheck (MemberAccess t1 t2) = return (Expr (MemberAccess t1 t2) (Simple IntType))
-exprCheck (MethodCallExpr _) = return (Expr (IntLiteral 1) (Simple IntType))
+exprCheck (MemberAccess obj member) = do
+  var <- findVariable (memberKey obj member)
+  return (Expr (MemberAccess obj member) (variableType var))
+exprCheck (MethodCallExpr (MethodCall objName methodName arguments)) = do
+  var <- findVariable objName
+  clsName <- extractClassName (variableType var)
+  cls <- findClass clsName
+  fDefinition <- maybeToParser "Method definition not found" $  M.lookup methodName (classDefinitionMethods cls)
+  let returnType = functionDefinitionReturnType fDefinition
+  exprType <- getValueReturn returnType
+  return (Expr (MethodCallExpr (MethodCall objName methodName arguments)) exprType)
 exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2

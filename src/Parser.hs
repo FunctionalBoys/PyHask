@@ -217,11 +217,7 @@ exprId :: Parser SimpleExpr
 exprId = Var <$> identifier
 
 exprMemberAccess :: Parser SimpleExpr
-exprMemberAccess = do
-  obj <- selfSymbol <|> identifier
-  dotSymbol
-  member <- identifier
-  return (MemberAccess obj member)
+exprMemberAccess = MemberAccess <$> objectIdentifier <*> (dotSymbol *> identifier)
 
 exprArrayAccess :: Parser SimpleExpr
 exprArrayAccess = do

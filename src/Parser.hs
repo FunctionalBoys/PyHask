@@ -312,14 +312,15 @@ arrayAssignmet = do
   guardFail (expressionType e == Simple aType) "Expression must match array type"
   return (ArrayAssignment i a e)
 
--- TODO: Check this after memory layout is decided
 objectAssignment :: Parser ObjectAssignment
 objectAssignment = do
-  obj <- identifier
+  obj <- selfSymbol <|> identifier
   dotSymbol
   member <- identifier
+  memberVariable <- findVariable (obj <> "." <> member)
   equalSymbol
   e <- expr
+  guardFail (expressionType e == variableType memberVariable) "Expression type doesn't match member's"
   return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop
@@ -353,6 +354,7 @@ classMember = do
     addClassMember member = do
       className <- findScopeClassName
       modify $ insertMemberToClass className member
+      registerMember "self" member
       return member
 
 classConstructorParameter :: Parser ClassConstructorParameter
@@ -360,6 +362,7 @@ classConstructorParameter = do
   classConstructorParameterId <- newIdentifier
   colonSymbol
   classConstructorParameterType <- composedType
+  modify $ insertVariable (Variable classConstructorParameterType True) classConstructorParameterId
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
@@ -374,9 +377,7 @@ classConstructorParser = scoped ScopeConstructor $ indentBlock indentedConstruct
       superSymbol
       parens $ sepBy identifier commaSymbol
     constructorAssignments = choice [ ConstructorPass <$ passSymbol
-                                    , ConstructorSimpleAssignment <$> try simpleAssignment
-                                    , ConstructorObjectAssignment <$> try objectAssignment
-                                    , ConstructorArrayAssignment <$> try arrayAssignmet]
+                                    , ConstructorObjectAssignment <$> objectAssignment]
     helper = ConstructorSuper <$> superConstructor <|> ConstructorAssignment <$> constructorAssignments
     -- TODO: check super is only used if there is a parent class
     listToConstructor f (ConstructorSuper x N.:| xs) = f (Just x) <$> traverse checkAssignment xs
@@ -416,6 +417,7 @@ classParser = scoped ScopePlaceholder $ indentBlock classBlock
       modify $ modifyScope (\(Scope _ ids vars) -> Scope (ScopeTypeClass className) ids vars)
       classFather <- optional $ parens checkIdentifierClass
       modify $ insertClassDefinition className (emptyClassDefinition classFather)
+      modify $ insertVariable (Variable (ClassType className) True) "self"
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper
     helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser

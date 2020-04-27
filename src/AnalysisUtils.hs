@@ -63,8 +63,15 @@ getArrayInfoFromType :: ComposedType -> Parser (SimpleType, Int)
 getArrayInfoFromType (ArrayType sType sz) = return (sType, sz)
 getArrayInfoFromType _                    = fail "Type is not an array"
 
+extractSimpleType :: ComposedType -> Parser SimpleType
+extractSimpleType (Simple sType) = return sType
+extractSimpleType _              = fail "Type was not simple"
+
 getArrayInfo :: Text -> Parser (SimpleType, Int)
 getArrayInfo ident = (variableType <$> findVariable ident) >>= getArrayInfoFromType
+
+memberKey :: Text -> Text -> Text
+memberKey obj member = obj <> "." <> member
 
 existsScope :: ScopeType -> Parser Bool
 existsScope scopeT = do
@@ -156,4 +163,10 @@ registerObjectMembers cls ident = do
   forM_ clsMembers (registerMember ident)
 
 registerMember :: Text -> ClassMember -> Parser()
-registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True) (objectIdent <> "." <> memberIdent)
+registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True) (memberKey objectIdent memberIdent)
+
+setVariableAsInitialized :: Text -> ParserState -> ParserState
+setVariableAsInitialized ident (ParserState ss fs cs) = ParserState (updateF <$> ss) fs cs
+  where
+    updateF (Scope sT sI sVariables) = Scope sT sI (M.update f ident sVariables)
+    f (Variable vT _) = Just (Variable vT True)

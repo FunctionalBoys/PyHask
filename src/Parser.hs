@@ -50,6 +50,9 @@ newIdentifierCheck f = do
 newIdentifier :: Parser Text
 newIdentifier = newIdentifierCheck addIdentifier
 
+objectIdentifier :: Parser Text
+objectIdentifier = selfSymbol <|> identifier
+
 indentBlock :: Parser (IndentOpt a b) -> Parser a
 indentBlock = L.indentBlock scn
 
@@ -297,6 +300,7 @@ simpleAssignment = do
   equalSymbol
   e <- expr
   guardFail (expressionType e == variableType variable) "The types of the expression and assignment doesn't match."
+  modify $ setVariableAsInitialized i
   return (SimpleAssignment i e)
 
 arrayAssignmet :: Parser ArrayAssignment
@@ -315,10 +319,11 @@ objectAssignment = do
   obj <- selfSymbol <|> identifier
   dotSymbol
   member <- identifier
-  memberVariable <- findVariable (obj <> "." <> member)
+  memberVariable <- findVariable (memberKey obj member)
   equalSymbol
   e <- expr
   guardFail (expressionType e == variableType memberVariable) "Expression type doesn't match member's"
+  modify $ setVariableAsInitialized (memberKey obj member)
   return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop

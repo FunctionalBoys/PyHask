@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module AnalysisUtils where
 
 import           Control.Monad.Combinators
@@ -147,3 +149,11 @@ insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserSta
 insertConstructorToClass clsName constructor (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
   where
     updateF (ClassDefinition father members _ methods) = Just (ClassDefinition father members constructor methods)
+
+registerObjectMembers :: ClassDefinition -> Text -> Parser ()
+registerObjectMembers cls ident = do
+  let clsMembers = classDefinitionMembers cls
+  forM_ clsMembers (registerMember ident)
+
+registerMember :: Text -> ClassMember -> Parser()
+registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True) (objectIdent <> "." <> memberIdent)

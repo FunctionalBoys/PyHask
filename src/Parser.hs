@@ -435,5 +435,8 @@ createObjectParser =  do
   let exprsTypes = expressionType <$> exprs
   let constructorTypes = classConstructorParameterType <$> (classConstructorParameters . classDefinitionConstructor) cls
   if exprsTypes == constructorTypes
-    then CreateObject variableName clsName exprs <$ modify (insertVariable (Variable (ClassType clsName) True) variableName)
+    then do
+      modify (insertVariable (Variable (ClassType clsName) True) variableName)
+      registerObjectMembers cls variableName
+      return $ CreateObject variableName clsName exprs
     else fail "Expressions for constructor do not match"

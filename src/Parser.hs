@@ -132,8 +132,10 @@ readParser = do
   ident <- identifier
   equalSymbol
   readSymbol
-  -- TODO: reading int as a placeholder
-  return (ReadStatement ident IntType)
+  (Variable variableT _) <- findVariable ident
+  sType <- extractSimpleType variableT
+  modify $ setVariableAsInitialized ident
+  return (ReadStatement ident sType)
 
 functionCallParser :: Parser FunctionCall
 functionCallParser = do

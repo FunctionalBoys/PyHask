@@ -12,6 +12,18 @@ class Hola:
     let de : string := 'hola'
     pass
 
+class MemberedClass:
+  init:
+    let member1 : int
+    let member2 : float
+
+    MemberedClass(i: int, f: float):
+      self.member1 := i
+      self.member2 := f
+
+  def f(i: int) -> void:
+    self.member1 := i
+
 def g(i : int) -> int:
   let b : bool := True
   if True:
@@ -29,8 +41,13 @@ def g(i : int) -> int:
 
   return 2
 
+def p(f: float) -> float:
+  return 5.0
+
 main:
   create a : Hola(5)
-  g(2)
+  create m : MemberedClass(5+2,1.0+p(1.0))
+  m.f(1)
+  g(2+m.f(1))
   while True:
     print(1)

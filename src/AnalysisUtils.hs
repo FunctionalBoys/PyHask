@@ -170,3 +170,11 @@ setVariableAsInitialized ident (ParserState ss fs cs) = ParserState (updateF <$>
   where
     updateF (Scope sT sI sVariables) = Scope sT sI (M.update f ident sVariables)
     f (Variable vT _) = Just (Variable vT True)
+
+insideLoop :: Text -> Parser ()
+insideLoop symbolName = do
+  existsFor <- existsScope ScopeTypeFor
+  existsWhile <- existsScope ScopeTypeWhile
+  if existsFor || existsWhile
+    then return ()
+    else fail $ T.unpack symbolName ++ " must be inside a loop"

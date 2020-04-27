@@ -208,14 +208,6 @@ breakParser = breakSymbol <* insideLoop "break"
 continueParser :: Parser Statement
 continueParser = continueSymbol <* insideLoop "continue"
 
-insideLoop :: Text -> Parser ()
-insideLoop symbolName = do
-  existsFor <- existsScope ScopeTypeFor
-  existsWhile <- existsScope ScopeTypeWhile
-  if existsFor || existsWhile
-    then return ()
-    else fail $ T.unpack symbolName ++ " must be inside a loop"
-
 exprId :: Parser SimpleExpr
 exprId = Var <$> identifier
 

@@ -80,7 +80,7 @@ functionArgument = do
   return FunctionArgument{..}
 
 functionParser :: Parser Function
-functionParser = scoped (ScopeTypeFunction "") $ indentBlock functionBlock
+functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
   where
     functionBlock = do
       defSymbol
@@ -363,7 +363,7 @@ classConstructorParameter = do
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
-classConstructorParser = indentBlock indentedConstructor >>= addClassConstructor
+classConstructorParser = scoped ScopeConstructor $ indentBlock indentedConstructor >>= addClassConstructor
   where
     indentedConstructor = do
       _ <- identifier
@@ -408,7 +408,7 @@ checkIdentifierClass = do
   return ident
 
 classParser :: Parser Class
-classParser = scoped (ScopeTypeClass "") $ indentBlock classBlock
+classParser = scoped ScopePlaceholder $ indentBlock classBlock
   where
     classBlock = do
       classSymbol

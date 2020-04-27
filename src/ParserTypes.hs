@@ -31,6 +31,8 @@ data ScopeType =
   | ScopeTypeFunction Text
   | ScopeTypeMain
   | ScopeTypeClass Text
+  | ScopePlaceholder
+  | ScopeConstructor
   | ScopeTypeGlobal deriving (Eq,Show)
 
 data Scope = Scope { scopeType        :: ScopeType,

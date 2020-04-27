@@ -67,6 +67,10 @@ extractSimpleType :: ComposedType -> Parser SimpleType
 extractSimpleType (Simple sType) = return sType
 extractSimpleType _              = fail "Type was not simple"
 
+extractClassName :: ComposedType -> Parser Text
+extractClassName (ClassType clsName) = return clsName
+extractClassName _                   = fail "Type is not a class"
+
 getArrayInfo :: Text -> Parser (SimpleType, Int)
 getArrayInfo ident = (variableType <$> findVariable ident) >>= getArrayInfoFromType
 
@@ -135,7 +139,7 @@ insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
 insertClassDefinition ident cls (ParserState s fs cDefinitions) = ParserState s fs (M.insert ident cls cDefinitions)
 
 emptyClassDefinition :: Maybe Text -> ClassDefinition
-emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) []
+emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) M.empty
 
 findClass :: Text -> Parser ClassDefinition
 findClass cName = do
@@ -147,10 +151,10 @@ insertMemberToClass clsName member (ParserState s f cDefinitions) = ParserState 
   where
     updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father (member:members) constructor methods)
 
-insertMethodToClass :: Text -> FunctionDefinition -> ParserState -> ParserState
-insertMethodToClass clsName method (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+insertMethodToClass :: Text -> Text -> FunctionDefinition -> ParserState -> ParserState
+insertMethodToClass clsName methodName method (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
   where
-    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father members constructor (method:methods))
+    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father members constructor (M.insert methodName method methods))
 
 insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
 insertConstructorToClass clsName constructor (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)

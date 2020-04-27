@@ -156,7 +156,7 @@ data Class = Class { className           :: Text,
 data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
                                          classDefinitionMembers         :: [ClassMember],
                                          classDefinitionConstructor     :: ClassConstructor,
-                                         classDefinitionMethods         :: [FunctionDefinition]
+                                         classDefinitionMethods         :: M.Map Text FunctionDefinition
                                        } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)

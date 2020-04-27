@@ -12,6 +12,7 @@ import           Data.Bifunctor
 import           Data.Default.Class
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
+import qualified Data.Map                           as M
 import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
@@ -95,9 +96,9 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
       colonSymbol
       let fDefinition = FunctionDefinition functionArguments functionReturnType
       maybeClass <- maybeInsideClass
-      maybe (modify $ insertFunction functionName fDefinition) (f fDefinition) maybeClass
+      maybe (modify $ insertFunction functionName fDefinition) (f fDefinition functionName) maybeClass
       indentSome (return . Function functionName functionArguments functionReturnType) statement
-    f fDefinition clsName = modify $ insertMethodToClass clsName fDefinition
+    f fDefinition fName clsName = modify $ insertMethodToClass clsName fName fDefinition
 
 whileParser :: Parser WhileLoop
 whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
@@ -152,9 +153,16 @@ functionCallParser = do
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier
+  (Variable vType _) <- findVariable methodCallObjectName
+  clsName <- extractClassName vType
+  cls <- findClass clsName
   dotSymbol
   methodCallMethodName <- identifier
+  mDefinition <- maybeToParser ("No method named " ++ T.unpack methodCallMethodName) (M.lookup methodCallMethodName (classDefinitionMethods cls))
   methodCallArguments <- parens $ sepBy expr commaSymbol
+  let callTypes = expressionType <$> methodCallArguments
+  let defTypes = Simple . argumentType <$> functionDefinitionArguments mDefinition
+  guardFail (callTypes == defTypes) "Incorrect expression types for method call"
   return MethodCall{..}
 
 returnParser :: Parser Statement

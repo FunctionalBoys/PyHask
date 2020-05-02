@@ -68,7 +68,7 @@ indentSome :: (NonEmpty b -> Parser a) -> Parser b -> Parser (IndentOpt a b)
 indentSome f = return . L.IndentSome indentation (f . N.fromList)
 
 simpleType :: Parser SimpleType
-simpleType = choice [intSymbol, boolSymbol, floatSymbol, stringSymbol, charSymbol]
+simpleType = choice [intSymbol, boolSymbol, floatSymbol, charSymbol]
 
 composedType :: Parser ComposedType
 composedType = try (ArrayType <$> simpleType <*> brackets intLiteral) <|> Simple <$> simpleType <|> ClassType <$> identifier
@@ -249,6 +249,9 @@ exprMethodCall = MethodCallExpr <$> methodCallParser
 exprString :: Parser SimpleExpr
 exprString = StringLiteral <$> stringLiteral
 
+exprChar :: Parser SimpleExpr
+exprChar = CharLiteral <$> charLiteral
+
 factor :: Parser SimpleExpr
 factor = choice [ parens simpleExpr
                 , try exprFloat
@@ -259,6 +262,7 @@ factor = choice [ parens simpleExpr
                 , try exprMemberAccess
                 , try exprArrayAccess
                 , exprString
+                , exprChar
                 , exprId]
 
 operatorTable :: [[Operator Parser SimpleExpr]]

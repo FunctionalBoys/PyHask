@@ -15,7 +15,7 @@ type Parser = StateT ParserState (Parsec Void Text)
 
 type IndentOpt = L.IndentOpt Parser
 
-data SimpleType = IntType | FloatType | BoolType | StringType | CharType deriving (Eq,Show)
+data SimpleType = IntType | FloatType | BoolType | CharType deriving (Eq,Show)
 
 data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Text deriving (Eq,Show)
 
@@ -203,7 +203,8 @@ data SimpleExpr =
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr
-  | StringLiteral Text
+  | StringLiteral String
+  | CharLiteral Char
   | Operate Op SimpleExpr SimpleExpr
   | FloatConversion SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)

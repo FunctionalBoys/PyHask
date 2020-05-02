@@ -38,7 +38,8 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
 data Variable = Variable {  variableType :: ComposedType,
-                            variableInit :: Bool
+                            variableInit :: Bool,
+                            variableAddress :: Address
                          } deriving (Eq,Show)
 
 data Quad =
@@ -218,6 +219,8 @@ data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe
                                        } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
+
+newtype Address = Address Int deriving (Eq,Show)
 
 data Expr = Expr { innerExpression :: SimpleExpr,
                    expressionType  :: ComposedType

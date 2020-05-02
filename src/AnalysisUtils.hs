@@ -126,8 +126,8 @@ destroyScope = do
 scoped :: ScopeType -> Parser a -> Parser a
 scoped sType = between (addScope sType) destroyScope
 
-createVariable :: ComposedType -> Maybe Expr -> Variable
-createVariable vType expr = Variable vType (isJust expr)
+createVariable :: ComposedType -> Maybe Expr -> Address -> Variable
+createVariable vType expr = Variable vType (isJust expr) 
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
 insertVariable v ident  = modifyScope (\(Scope sType ids variables vars temp) -> Scope sType ids (M.insert ident v variables) vars temp)
@@ -173,7 +173,7 @@ setVariableAsInitialized :: Text -> ParserState -> ParserState
 setVariableAsInitialized ident (ParserState ss fs cs qs literals) = ParserState (updateF <$> ss) fs cs qs literals
   where
     updateF (Scope sT sI sVariables vars temp) = Scope sT sI (M.update f ident sVariables) vars temp
-    f (Variable vT _) = Just (Variable vT True)
+    f (Variable vT _ address) = Just (Variable vT True address)
 
 insideLoop :: Text -> Parser ()
 insideLoop symbolName = do

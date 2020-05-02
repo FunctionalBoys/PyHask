@@ -5,6 +5,7 @@ import           Data.Default.Class
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty         as N
 import qualified Data.Map.Strict            as M
+import qualified Data.Sequence              as S
 import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
@@ -23,6 +24,10 @@ data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 data Variable = Variable {  variableType :: ComposedType,
                             variableInit :: Bool
                          } deriving (Eq,Show)
+
+data Quad =
+    QuadOp Op Int Int Int
+  | QuadAssign Int Int deriving (Eq,Show)
 
 data ScopeType =
     ScopeTypeFor
@@ -47,11 +52,12 @@ data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [
 
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                  functionDefinitions  :: M.Map Text FunctionDefinition,
-                                 classDefinitions     :: M.Map Text ClassDefinition
+                                 classDefinitions     :: M.Map Text ClassDefinition,
+                                 quadruplesSequence   :: S.Seq Quad
                                } deriving (Eq,Show)
 
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal [] M.empty N.:| []) M.empty M.empty
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty N.:| []) M.empty M.empty S.empty
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr
@@ -202,6 +208,6 @@ data Conditional = Conditional { ifBlock    :: ConditionalBlock,
                                } deriving (Eq,Show)
 
 data CreateObject = CreateObject {  createObjectVariableName :: Text,
-                                    createObjectClassName   :: Text,
+                                    createObjectClassName    :: Text,
                                     createObjectExpressions  :: [Expr]
                                 } deriving (Eq,Show)

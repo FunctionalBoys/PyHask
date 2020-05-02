@@ -110,10 +110,10 @@ maybeInsideClass = do
   return $ asum $ fmap maybeClassName sTypes
 
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
-modifyScopes f (ParserState s d c) = ParserState (f s) d c
+modifyScopes f (ParserState s d c q) = ParserState (f s) d c q
 
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
-modifyScope f (ParserState (s N.:| ss) d c) = ParserState (f s N.:| ss) d c
+modifyScope f (ParserState (s N.:| ss) d c q) = ParserState (f s N.:| ss) d c q
 
 addScope :: ScopeType -> Parser ()
 addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty))
@@ -133,10 +133,10 @@ insertVariable :: Variable -> Text -> ParserState -> ParserState
 insertVariable v ident  = modifyScope (\(Scope sType ids variables) -> Scope sType ids (M.insert ident v variables))
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
-insertFunction ident f (ParserState s fDefinitions c) = ParserState s (M.insert ident f fDefinitions) c
+insertFunction ident f (ParserState s fDefinitions c q) = ParserState s (M.insert ident f fDefinitions) c q
 
 insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
-insertClassDefinition ident cls (ParserState s fs cDefinitions) = ParserState s fs (M.insert ident cls cDefinitions)
+insertClassDefinition ident cls (ParserState s fs cDefinitions q) = ParserState s fs (M.insert ident cls cDefinitions) q
 
 emptyClassDefinition :: Maybe Text -> ClassDefinition
 emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) M.empty
@@ -147,17 +147,17 @@ findClass cName = do
   maybeToParser ("Class " ++ T.unpack cName ++ " doesn't exist") (M.lookup cName cDefinitions)
 
 insertMemberToClass :: Text -> ClassMember -> ParserState -> ParserState
-insertMemberToClass clsName member (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+insertMemberToClass clsName member (ParserState s f cDefinitions q) = ParserState s f (M.update updateF clsName cDefinitions) q
   where
     updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father (member:members) constructor methods)
 
 insertMethodToClass :: Text -> Text -> FunctionDefinition -> ParserState -> ParserState
-insertMethodToClass clsName methodName method (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+insertMethodToClass clsName methodName method (ParserState s f cDefinitions q) = ParserState s f (M.update updateF clsName cDefinitions) q
   where
     updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father members constructor (M.insert methodName method methods))
 
 insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
-insertConstructorToClass clsName constructor (ParserState s f cDefinitions) = ParserState s f (M.update updateF clsName cDefinitions)
+insertConstructorToClass clsName constructor (ParserState s f cDefinitions q) = ParserState s f (M.update updateF clsName cDefinitions) q
   where
     updateF (ClassDefinition father members _ methods) = Just (ClassDefinition father members constructor methods)
 
@@ -170,7 +170,7 @@ registerMember :: Text -> ClassMember -> Parser()
 registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True) (memberKey objectIdent memberIdent)
 
 setVariableAsInitialized :: Text -> ParserState -> ParserState
-setVariableAsInitialized ident (ParserState ss fs cs) = ParserState (updateF <$> ss) fs cs
+setVariableAsInitialized ident (ParserState ss fs cs qs) = ParserState (updateF <$> ss) fs cs qs
   where
     updateF (Scope sT sI sVariables) = Scope sT sI (M.update f ident sVariables)
     f (Variable vT _) = Just (Variable vT True)

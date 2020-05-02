@@ -46,7 +46,7 @@ existsInScope variableIdentifier = do
     return $ any (elem variableIdentifier) (fmap scopeIdentifiers list)
 
 addIdentifier :: Text -> ParserState -> ParserState
-addIdentifier ident = modifyScope (\(Scope st ids v) -> Scope st (ident:ids) v)
+addIdentifier ident = modifyScope (\(Scope st ids v vars temp) -> Scope st (ident:ids) v vars temp)
 
 findVariable :: Text -> Parser Variable
 findVariable ident = do
@@ -109,8 +109,20 @@ modifyScopes f (ParserState s d c q) = ParserState (f s) d c q
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
 modifyScope f (ParserState (s N.:| ss) d c q) = ParserState (f s N.:| ss) d c q
 
+newLocalVariables :: MemoryBlock
+newLocalVariables = MemoryBlock (newTypeMemoryBlock 12001 16000) (newTypeMemoryBlock 16001 20000) (newTypeMemoryBlock 20001 24000) (newTypeMemoryBlock 24001 28000)
+
+newLocalTemp :: MemoryBlock
+newLocalTemp = MemoryBlock (newTypeMemoryBlock 28001 32000) (newTypeMemoryBlock 32001 36000) (newTypeMemoryBlock 36001 40000) (newTypeMemoryBlock 40001 44000)
+
 addScope :: ScopeType -> Parser ()
-addScope sType = modify (modifyScopes $ N.cons (Scope sType [] M.empty))
+addScope sType = do
+  currentScope <- gets $ N.head . scopes
+  modify $ addScope' sType currentScope
+
+addScope' :: ScopeType -> Scope -> (ParserState -> ParserState)
+addScope' sType (Scope ScopeTypeGlobal _ _ _ _ ) = modifyScopes $ N.cons (Scope sType [] M.empty newLocalVariables newLocalTemp)
+addScope' sType (Scope _ _ _ mVars mTemp) = modifyScopes $ N.cons (Scope sType [] M.empty mVars mTemp)
 
 destroyScope :: Parser ()
 destroyScope = do
@@ -124,7 +136,7 @@ createVariable :: ComposedType -> Maybe Expr -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
-insertVariable v ident  = modifyScope (\(Scope sType ids variables) -> Scope sType ids (M.insert ident v variables))
+insertVariable v ident  = modifyScope (\(Scope sType ids variables vars temp) -> Scope sType ids (M.insert ident v variables) vars temp)
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f (ParserState s fDefinitions c q) = ParserState s (M.insert ident f fDefinitions) c q
@@ -166,7 +178,7 @@ registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVa
 setVariableAsInitialized :: Text -> ParserState -> ParserState
 setVariableAsInitialized ident (ParserState ss fs cs qs) = ParserState (updateF <$> ss) fs cs qs
   where
-    updateF (Scope sT sI sVariables) = Scope sT sI (M.update f ident sVariables)
+    updateF (Scope sT sI sVariables vars temp) = Scope sT sI (M.update f ident sVariables) vars temp
     f (Variable vT _) = Just (Variable vT True)
 
 insideLoop :: Text -> Parser ()

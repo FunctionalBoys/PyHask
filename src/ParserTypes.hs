@@ -40,14 +40,27 @@ data ScopeType =
   | ScopeConstructor
   | ScopeTypeGlobal deriving (Eq,Show)
 
-data Scope = Scope { scopeType        :: ScopeType,
-                     scopeIdentifiers :: [Text],
-                     scopeVariables   :: M.Map Text Variable
+data TypeMemoryBlock = TypeMemoryBlock { memoryLowerBound :: Int,
+                                         memoryUpperBound :: Int,
+                                         currentDirection :: Int
+                                       } deriving (Eq,Show)
+
+data MemoryBlock = MemoryBlock { memoryBlockInt   :: TypeMemoryBlock,
+                                 memoryBlockFloat :: TypeMemoryBlock,
+                                 memoryBlockChar  :: TypeMemoryBlock,
+                                 memoryBlockBool  :: TypeMemoryBlock
+                               } deriving (Eq,Show)
+
+data Scope = Scope { scopeType            :: ScopeType,
+                     scopeIdentifiers     :: [Text],
+                     scopeVariables       :: M.Map Text Variable,
+                     scopeVariablesMemory :: MemoryBlock,
+                     scopeTempMemory      :: MemoryBlock
                    } deriving (Eq,Show)
 
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
                                                functionDefinitionReturnType :: ReturnType
-                                            } deriving (Eq,Show)
+                                             } deriving (Eq,Show)
 
 
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
@@ -56,8 +69,17 @@ data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                  quadruplesSequence   :: S.Seq Quad
                                } deriving (Eq,Show)
 
+newTypeMemoryBlock :: Int -> Int -> TypeMemoryBlock
+newTypeMemoryBlock i j = TypeMemoryBlock i j i
+
+globalVariables :: MemoryBlock
+globalVariables = MemoryBlock (newTypeMemoryBlock 0 1000) (newTypeMemoryBlock 1001 2000) (newTypeMemoryBlock 2001 3000) (newTypeMemoryBlock 3001 4000)
+
+globalTemp :: MemoryBlock
+globalTemp = MemoryBlock (newTypeMemoryBlock 4001 6000) (newTypeMemoryBlock 6001 8000) (newTypeMemoryBlock 8001 10000) (newTypeMemoryBlock 10001 12000)
+
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal [] M.empty N.:| []) M.empty M.empty S.empty
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty globalVariables globalTemp N.:| []) M.empty M.empty S.empty
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr

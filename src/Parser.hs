@@ -90,7 +90,7 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
     functionBlock = do
       defSymbol
       functionName <- newIdentifier
-      modify $ modifyScope (\(Scope _ ids vars) -> Scope (ScopeTypeFunction functionName) ids vars)
+      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction functionName) ids vars mVars mTemp)
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType
@@ -418,7 +418,7 @@ classParser = scoped ScopePlaceholder $ indentBlock classBlock
     classBlock = do
       classSymbol
       className <- newIdentifier
-      modify $ modifyScope (\(Scope _ ids vars) -> Scope (ScopeTypeClass className) ids vars)
+      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeClass className) ids vars mVars mTemp)
       classFather <- optional $ parens checkIdentifierClass
       modify $ insertClassDefinition className (emptyClassDefinition classFather)
       modify $ insertVariable (Variable (ClassType className) True) "self"

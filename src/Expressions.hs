@@ -53,7 +53,7 @@ exprCheck (MethodCallExpr (MethodCall objName methodName arguments)) = do
   var <- findVariable objName
   clsName <- extractClassName (variableType var)
   cls <- findClass clsName
-  fDefinition <- maybeToParser "Method definition not found" $  M.lookup methodName (classDefinitionMethods cls)
+  fDefinition <- maybeFail "Method definition not found" $  M.lookup methodName (classDefinitionMethods cls)
   let returnType = functionDefinitionReturnType fDefinition
   exprType <- getValueReturn returnType
   return (Expr (MethodCallExpr (MethodCall objName methodName arguments)) exprType)

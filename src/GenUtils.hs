@@ -21,6 +21,6 @@ lookupQuadruple i (ParserState _ _ _ quads) = quads S.!? i
 safeQuadrupleUpdate :: (Quad -> Either String Quad) -> Int -> Parser ()
 safeQuadrupleUpdate f index = do
   mQuad <- gets $ lookupQuadruple index
-  quad <- maybeToParser ("No quadruple at index " ++ show index) mQuad
+  quad <- maybeFail ("No quadruple at index " ++ show index) mQuad
   newQuad <- liftEither <<< f $ quad
   modify $ updateQuadruple index newQuad

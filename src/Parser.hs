@@ -159,7 +159,7 @@ methodCallParser = do
   cls <- findClass clsName
   dotSymbol
   methodCallMethodName <- identifier
-  mDefinition <- maybeToParser ("No method named " ++ T.unpack methodCallMethodName) (M.lookup methodCallMethodName (classDefinitionMethods cls))
+  mDefinition <- maybeFail ("No method named " ++ T.unpack methodCallMethodName) (M.lookup methodCallMethodName (classDefinitionMethods cls))
   methodCallArguments <- parens $ sepBy expr commaSymbol
   let callTypes = expressionType <$> methodCallArguments
   let defTypes = Simple . argumentType <$> functionDefinitionArguments mDefinition

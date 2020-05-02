@@ -2,8 +2,8 @@ module Utils where
 
 import qualified Control.Monad.Fail as Fail
 
-maybeToParser :: (Fail.MonadFail m) => String -> Maybe a -> m a
-maybeToParser e = maybe (fail e) return
+maybeFail :: (Fail.MonadFail m) => String -> Maybe a -> m a
+maybeFail e = maybe (fail e) return
 
 guardFail :: (Fail.MonadFail m) => Bool -> String -> m ()
 guardFail True _  = return ()

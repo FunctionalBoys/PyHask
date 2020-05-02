@@ -51,7 +51,7 @@ addIdentifier ident = modifyScope (\(Scope st ids v vars temp) -> Scope st (iden
 findVariable :: Text -> Parser Variable
 findVariable ident = do
   maps <- fmap scopeVariables <$> gets scopes
-  maybeToParser ("Variable " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
+  maybeFail ("Variable " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
 getArrayInfoFromType :: ComposedType -> Parser (SimpleType, Int)
 getArrayInfoFromType (ArrayType sType sz) = return (sType, sz)
@@ -79,12 +79,12 @@ existsScope scopeT = do
 findFunction :: Text -> Parser FunctionDefinition
 findFunction fName = do
   fDefinitions <- gets functionDefinitions
-  maybeToParser ("Function " ++ T.unpack fName ++ " doesn't exist") (M.lookup fName fDefinitions)
+  maybeFail ("Function " ++ T.unpack fName ++ " doesn't exist") (M.lookup fName fDefinitions)
 
 findScopeFunctionName :: Parser Text
 findScopeFunctionName = do
   sTypes <- fmap scopeType <$> gets scopes
-  maybeToParser "No parent function" $ asum $ fmap f sTypes
+  maybeFail "No parent function" $ asum $ fmap f sTypes
   where
     f (ScopeTypeFunction fName) = Just fName
     f _                         = Nothing
@@ -96,7 +96,7 @@ maybeClassName _                     = Nothing
 findScopeClassName :: Parser Text
 findScopeClassName = do
   sTypes <- gets $ fmap scopeType . scopes
-  maybeToParser "Not inside class" $ asum $ fmap maybeClassName sTypes
+  maybeFail "Not inside class" $ asum $ fmap maybeClassName sTypes
 
 maybeInsideClass :: Parser (Maybe Text)
 maybeInsideClass = do
@@ -150,7 +150,7 @@ emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Not
 findClass :: Text -> Parser ClassDefinition
 findClass cName = do
   cDefinitions <- gets classDefinitions
-  maybeToParser ("Class " ++ T.unpack cName ++ " doesn't exist") (M.lookup cName cDefinitions)
+  maybeFail ("Class " ++ T.unpack cName ++ " doesn't exist") (M.lookup cName cDefinitions)
 
 insertMemberToClass :: Text -> ClassMember -> ParserState -> ParserState
 insertMemberToClass clsName member (ParserState s f cDefinitions q) = ParserState s f (M.update updateF clsName cDefinitions) q

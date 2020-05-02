@@ -22,6 +22,7 @@ import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
+import           Utils
 
 mainParser :: Parser MainProgram
 mainParser = do

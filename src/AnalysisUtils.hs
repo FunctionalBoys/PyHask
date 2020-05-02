@@ -12,6 +12,7 @@ import           Data.Maybe
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           ParserTypes
+import           Utils
 
 
 getValueReturn :: ReturnType -> Parser ComposedType
@@ -46,13 +47,6 @@ existsInScope variableIdentifier = do
 
 addIdentifier :: Text -> ParserState -> ParserState
 addIdentifier ident = modifyScope (\(Scope st ids v) -> Scope st (ident:ids) v)
-
-maybeToParser :: String -> Maybe a -> Parser a
-maybeToParser e = maybe (fail e) return
-
-guardFail :: Bool -> String -> Parser ()
-guardFail True _  = return ()
-guardFail False s = fail s
 
 findVariable :: Text -> Parser Variable
 findVariable ident = do

@@ -1,9 +1,10 @@
 module Expressions where
 
 import           AnalysisUtils
+import qualified Data.Map      as M
 import qualified Data.Text     as T
 import           ParserTypes
-import qualified Data.Map as M
+import           Utils
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck (Var ident) = do

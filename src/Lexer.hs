@@ -9,6 +9,8 @@ import           ParserTypes
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as N
 
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break",
@@ -22,6 +24,18 @@ scn = L.space space1 lineComment empty
 
 sc :: Parser ()
 sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
+
+indentBlock :: Parser (IndentOpt a b) -> Parser a
+indentBlock = L.indentBlock scn
+
+nonIndented :: Parser a -> Parser a
+nonIndented = L.nonIndented scn
+
+indentation :: Maybe Pos
+indentation = Nothing
+
+indentSome :: (NonEmpty b -> Parser a) -> Parser b -> Parser (IndentOpt a b)
+indentSome f = return . L.IndentSome indentation (f . N.fromList)
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -189,6 +203,9 @@ identifier = (lexeme . try) (p >>= check)
     check x = if x `elem` reservedWords
       then fail $ "Reserved word " ++ show x ++ " cannot be an identifier"
       else return x
+
+objectIdentifier :: Parser Text
+objectIdentifier = selfSymbol <|> identifier
 
 createSymbol :: Parser ()
 createSymbol = reservedWord "create"

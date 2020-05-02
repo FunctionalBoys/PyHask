@@ -10,7 +10,6 @@ import           Control.Monad.Combinators.NonEmpty
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Default.Class
-import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as N
 import qualified Data.Map                           as M
 import           Data.Maybe
@@ -21,7 +20,6 @@ import           Lexer
 import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer         as L
 import           Utils
 
 mainParser :: Parser MainProgram
@@ -41,31 +39,15 @@ programParser = between space eof mainParser
 parseProgram :: String -> Text -> Either String MainProgram
 parseProgram filename input = first errorBundlePretty $ runParser (evalStateT programParser def) filename input
 
-newIdentifierCheck :: (Text ->ParserState -> ParserState) -> Parser Text
+newIdentifierCheck :: (Text -> ParserState -> ParserState) -> Parser Text
 newIdentifierCheck f = do
   ident <- identifier
   exists <- existsIdentifier ident
-  if exists
-    then fail ("Identifier " ++ T.unpack ident ++ " already defined")
-    else ident <$ modify (f ident)
+  guardFail exists ("Identifier " ++ T.unpack ident ++ " already defined")
+  ident <$ modify (f ident)
 
 newIdentifier :: Parser Text
 newIdentifier = newIdentifierCheck addIdentifier
-
-objectIdentifier :: Parser Text
-objectIdentifier = selfSymbol <|> identifier
-
-indentBlock :: Parser (IndentOpt a b) -> Parser a
-indentBlock = L.indentBlock scn
-
-nonIndented :: Parser a -> Parser a
-nonIndented = L.nonIndented scn
-
-indentation :: Maybe Pos
-indentation = Nothing
-
-indentSome :: (NonEmpty b -> Parser a) -> Parser b -> Parser (IndentOpt a b)
-indentSome f = return . L.IndentSome indentation (f . N.fromList)
 
 simpleType :: Parser SimpleType
 simpleType = choice [intSymbol, boolSymbol, floatSymbol, charSymbol]
@@ -107,9 +89,8 @@ whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
     whileBlock = do
       whileSymbol
       whileCondition <- expr
-      if expressionType whileCondition == Simple BoolType
-        then colonSymbol *> indentSome (return . WhileLoop whileCondition) statement
-        else fail "Only boolean expressions can be used in while condition"
+      guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions can be used in while condition"
+      colonSymbol *> indentSome (return . WhileLoop whileCondition) statement
 
 ifParser :: Parser Conditional
 ifParser = do
@@ -121,9 +102,8 @@ ifParser = do
       indentedCondition firstSymbol = do
         _ <- firstSymbol
         conditionalExpr <- expr
-        if expressionType conditionalExpr == Simple BoolType
-          then colonSymbol *> indentSome (return . ConditionalBlock conditionalExpr) statement
-          else fail "Only boolean expressions can be used for conditions"
+        guardFail (expressionType conditionalExpr == Simple BoolType) "Only boolean expressions can be used for conditions"
+        colonSymbol *> indentSome (return . ConditionalBlock conditionalExpr) statement
       indentedElse = elseSymbol *> indentSome return statement
 
 printParser :: Parser Statement
@@ -173,9 +153,8 @@ returnParser = do
   let rExpr = fromMaybe VoidReturn (mExpr >>= check)
   fName <- findScopeFunctionName
   rType <- functionDefinitionReturnType <$> findFunction fName
-  if rExpr == rType
-    then return (ReturnStatement mExpr)
-    else fail "Return type does not match function type"
+  guardFail (rExpr == rType) "Return type does not match function type"
+  return (ReturnStatement mExpr)
   where
     check (Expr _ (Simple sType)) = Just (ValueReturn sType)
     check _                       = Nothing
@@ -185,9 +164,7 @@ declaration = letSymbol *> do
   identifiers <- sepBy1 newIdentifier commaSymbol
   idType <- colonSymbol *> composedType
   rExpr <- optional $ equalSymbol *> expr
-  if maybe True ((== idType) . expressionType) rExpr
-    then return ()
-    else fail "Expression must match type"
+  guardFail (maybe True ((== idType) . expressionType) rExpr) "Expression must match type"
   case idType of
     ClassType _ -> fail "Use create statement for object declaration"
     _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
@@ -227,9 +204,8 @@ exprArrayAccess :: Parser SimpleExpr
 exprArrayAccess = do
   ident <- identifier
   index <- brackets expr
-  if expressionType index == Simple IntType
-    then return (ArrayAccess ident index)
-    else fail "Array access must be an integral expression"
+  guardFail (expressionType index == Simple IntType) "Array access must be an integral expression"
+  return (ArrayAccess ident index)
 
 exprInt :: Parser SimpleExpr
 exprInt = IntLiteral <$> intLiteral
@@ -444,9 +420,7 @@ createObjectParser =  do
   exprs <- parens $ sepBy expr commaSymbol
   let exprsTypes = expressionType <$> exprs
   let constructorTypes = classConstructorParameterType <$> (classConstructorParameters . classDefinitionConstructor) cls
-  if exprsTypes == constructorTypes
-    then do
-      modify (insertVariable (Variable (ClassType clsName) True) variableName)
-      registerObjectMembers cls variableName
-      return $ CreateObject variableName clsName exprs
-    else fail "Expressions for constructor do not match"
+  guardFail (exprsTypes == constructorTypes) "Expressions for constructor do not match"
+  modify (insertVariable (Variable (ClassType clsName) True) variableName)
+  registerObjectMembers cls variableName
+  return $ CreateObject variableName clsName exprs

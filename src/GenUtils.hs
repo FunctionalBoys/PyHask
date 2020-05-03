@@ -2,23 +2,26 @@ module GenUtils where
 
 import           Control.Category
 import           Control.Monad.State.Lazy
+import qualified Data.HashMap.Strict      as H
 import qualified Data.List.NonEmpty       as N
 import qualified Data.Sequence            as S
 import           ParserTypes
 import           Utils
-import qualified Data.HashMap.Strict      as H
 
 quadruplesCounter :: ParserState -> Int
-quadruplesCounter (ParserState _ _ _ quads _) = S.length quads
+quadruplesCounter ParserState{quadruplesSequence=quads} = S.length quads
 
 addQuadruple :: Quad -> ParserState -> ParserState
-addQuadruple quad (ParserState ss fs cs quads literals) = ParserState ss fs cs (quads S.|> quad) literals
+addQuadruple quad pState@ParserState{quadruplesSequence=quads}= pState{ quadruplesSequence = quads S.|> quad}
+
+registerQuadruple :: Quad -> Parser ()
+registerQuadruple = modify <<< addQuadruple
 
 updateQuadruple :: Int -> Quad -> ParserState -> ParserState
-updateQuadruple index quad (ParserState ss fs cs quads literals) = ParserState ss fs cs (S.update index quad quads) literals
+updateQuadruple index quad pState@ParserState{quadruplesSequence=quads} = pState {quadruplesSequence= S.update index quad quads}
 
 lookupQuadruple :: Int -> ParserState -> Maybe Quad
-lookupQuadruple i (ParserState _ _ _ quads _) = quads S.!? i
+lookupQuadruple i ParserState{quadruplesSequence=quads} = quads S.!? i
 
 safeQuadrupleUpdate :: (Quad -> Either String Quad) -> Int -> Parser ()
 safeQuadrupleUpdate f index = do
@@ -33,13 +36,13 @@ memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection )
   | otherwise = Nothing
 
 getNextAddress :: SimpleType -> MemoryBlock -> Maybe Address
-getNextAddress IntType (MemoryBlock typeMemoryBlock _ _ _) = memoryBlockToMaybeAddress typeMemoryBlock
-getNextAddress FloatType (MemoryBlock _ typeMemoryBlock _ _) = memoryBlockToMaybeAddress typeMemoryBlock
-getNextAddress CharType (MemoryBlock _ _ typeMemoryBlock _) = memoryBlockToMaybeAddress typeMemoryBlock
-getNextAddress BoolType (MemoryBlock _ _ _ typeMemoryBlock) = memoryBlockToMaybeAddress typeMemoryBlock
+getNextAddress IntType = memoryBlockToMaybeAddress <<< memoryBlockInt
+getNextAddress FloatType = memoryBlockToMaybeAddress <<< memoryBlockFloat
+getNextAddress CharType = memoryBlockToMaybeAddress <<< memoryBlockChar
+getNextAddress BoolType = memoryBlockToMaybeAddress <<< memoryBlockBool
 
 getNextVariableAddress :: SimpleType -> ParserState -> Maybe Address
-getNextVariableAddress sType (ParserState (Scope _ _ _ memoryblock _ N.:| _) _ _ _ _) = getNextAddress sType memoryblock
+getNextVariableAddress sType pState = getNextAddress sType (currentMemoryBlock pState)
 
 memoryBlockIncrease :: TypeMemoryBlock -> TypeMemoryBlock
 memoryBlockIncrease (TypeMemoryBlock mLBound mUBound cDirection) = TypeMemoryBlock mLBound mUBound (cDirection + 1)
@@ -57,13 +60,57 @@ getNextTypeAddress sT mB = do
   return (increaseCurrentAddress sT mB, address)
 
 currentMemoryBlock :: ParserState -> MemoryBlock
-currentMemoryBlock (ParserState (Scope _ _ _ memoryblock _ N.: _) _ _ _ _) = memoryblock
+currentMemoryBlock ParserState{scopes=(Scope{scopeVariablesMemory=memoryBlock} N.:| _)} = memoryBlock
+
+currentTempBlock :: ParserState -> MemoryBlock
+currentTempBlock ParserState{scopes=(Scope{scopeTempMemory=memoryBlock} N.:| _)} = memoryBlock
 
 updateCurrentMemoryBlock :: MemoryBlock -> ParserState -> ParserState
-updateCurrentMemoryBlock memoryBlock (ParserState (Scope sT sI sV _ sTM N.: next) q w e r) = (ParserState (Scope sT sI sV memoryBlock sTM N.: next) q w e r)
+updateCurrentMemoryBlock memoryBlock pState@ParserState{scopes=(currentScope@Scope{} N.:| restScopes)} = pState {scopes=currentScope{scopeVariablesMemory=memoryBlock} N.:| restScopes}
 
 updateCurrentTemp :: MemoryBlock -> ParserState -> ParserState
-updateCurrentTemp memoryBlock (ParserState (Scope sT sI sV sM _ N.: next) q w e r) = (ParserState (Scope sT sI sV SM memoryBlock N.: next) q w e r)
+updateCurrentTemp memoryBlock pState@ParserState{scopes=(currentScope@Scope{} N.:| restScopes)} = pState {scopes=currentScope{scopeTempMemory=memoryBlock} N.:| restScopes}
+
+nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> SimpleType -> Parser Address
+nextAddress fetch push sType = do
+  mB <- gets fetch
+  (nMB, address) <- getNextTypeAddress sType mB
+  address <$ (modify <<< push) nMB
+
+nextVarAddress :: SimpleType -> Parser Address
+nextVarAddress = nextAddress currentMemoryBlock updateCurrentMemoryBlock
+
+nextTempAddress :: SimpleType -> Parser Address
+nextTempAddress = nextAddress currentTempBlock updateCurrentTemp
 
 lookupLiteral :: Literal -> ParserState -> Maybe Address
-lookupLiteral literal (ParserState _ _ _ _ (LiteralBlock _ lMap)) = H.lookup literal lMap
+lookupLiteral literal ParserState{literalBlock=LiteralBlock{literalAddressMap=lMap}} = H.lookup literal lMap
+
+getLiteralMemoryBlock :: ParserState -> MemoryBlock
+getLiteralMemoryBlock ParserState{literalBlock=LiteralBlock{literalMemoryBlock=mBlock}} = mBlock
+
+updateLiteralMemoryBlock :: MemoryBlock -> ParserState -> ParserState
+updateLiteralMemoryBlock memoryBlock pState@ParserState{literalBlock=lBlock@LiteralBlock{}} = pState{literalBlock=lBlock{literalMemoryBlock=memoryBlock}}
+
+nextLiteralAddress :: SimpleType -> Parser Address
+nextLiteralAddress = nextAddress getLiteralMemoryBlock updateLiteralMemoryBlock
+
+insertLiteralAddress :: Literal -> Address -> ParserState -> ParserState
+insertLiteralAddress literal address pState@ParserState{literalBlock=lBlock@LiteralBlock{literalAddressMap=lMap}} = pState{literalBlock=lBlock{literalAddressMap=H.insert literal address lMap}}
+
+literalType :: Literal -> SimpleType
+literalType (LiteralInt _)   = IntType
+literalType (LiteralFloat _) = FloatType
+literalType (LiteralChar _)  = CharType
+literalType (LiteralBool _)  = BoolType
+
+getLiteralAddress :: Literal -> Parser Address
+getLiteralAddress literal = do
+  mAddress <- gets $ lookupLiteral literal
+  case mAddress of
+    Just address -> return address
+    Nothing -> do
+      let lType = literalType literal
+      address <- nextLiteralAddress lType
+      modify $ insertLiteralAddress literal address
+      return address

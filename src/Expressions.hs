@@ -1,54 +1,60 @@
-module Expressions where
+module Expressions (exprCheck) where
 
 import           AnalysisUtils
 import qualified Data.Map      as M
 import qualified Data.Text     as T
 import           ParserTypes
 import           Utils
+import GenUtils
 
 exprCheck :: SimpleExpr -> Parser Expr
-exprCheck (Var ident) = do
+exprCheck var@(Var ident) = do
   (Variable vType initialized address) <- findVariable ident
-  if not initialized
-    then fail $ "Can't use uninitailized variable " ++ T.unpack ident
-  else
-    return (Expr (Var ident) vType address)
-exprCheck (IntLiteral integer) = return (Expr (IntLiteral integer) (Simple IntType))
-exprCheck (FloatLiteral float) = return (Expr (FloatLiteral float) (Simple FloatType))
-exprCheck (BoolLiteral bool) = return (Expr (BoolLiteral bool) (Simple BoolType))
-exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (ArrayType CharType (length sLiteral)))
-exprCheck (CharLiteral cLiteral) = return (Expr (CharLiteral cLiteral) (Simple CharType))
+  guardFail initialized $ "Can't use uninitailized variable " ++ T.unpack ident
+  return (Expr var vType address)
+exprCheck sExpr@(IntLiteral _ a) = return (Expr sExpr (Simple IntType) a)
+exprCheck sExpr@(FloatLiteral _ a) = return (Expr sExpr (Simple FloatType) a)
+exprCheck sExpr@(BoolLiteral _ a) = return (Expr sExpr (Simple BoolType) a)
+-- TODO: Check this when arrays are an actual thing
+exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (ArrayType CharType (length sLiteral)) (Address (-1)))
+exprCheck sExpr@(CharLiteral _ a) = return (Expr sExpr (Simple CharType) a)
 exprCheck (Not sExpr) = do
-  (Expr cExpr cType) <- exprCheck sExpr
-  if cType == Simple BoolType
-    then return (Expr (Not cExpr) cType)
-    else fail "Only boolean expressions can be negated"
+  (Expr cExpr cType address) <- exprCheck sExpr
+  guardFail (cType == Simple BoolType) "Only boolean expressions can be negated"
+  nAddress <- nextTempAddress BoolType
+  registerQuadruple $ QuadNot address nAddress
+  return (Expr (Not cExpr) cType nAddress)
 exprCheck (Neg sExpr) = do
-  (Expr cExpr cType) <- exprCheck sExpr
-  if cType == Simple IntType || cType == Simple FloatType
-    then return (Expr (Neg cExpr) cType)
-    else fail "Only numeric values have a negative"
-exprCheck (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) = do
+  (Expr cExpr cType address) <- exprCheck sExpr
+  sType <- extractSimpleType cType
+  guardFail (sType == IntType || sType == FloatType) "Only numeric values have a negative"
+  nAddress <- nextTempAddress sType
+  registerQuadruple $ QuadNeg address nAddress
+  return (Expr (Neg cExpr) cType nAddress)
+exprCheck (ArrayAccess ident (Expr (IntLiteral integer a) (Simple IntType) a2)) = do
   (aType,sz) <- getArrayInfo ident
-  if integer >= sz
-    then fail "Index out of bounds"
-    else return (Expr (ArrayAccess ident (Expr (IntLiteral integer) (Simple IntType))) (Simple aType))
-exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType))) = do
+  guardFail (integer < sz) "Index out of bounds"
+  -- TODO: Check this when arrays are a thing
+  return (Expr (ArrayAccess ident (Expr (IntLiteral integer a) (Simple IntType) a2)) (Simple aType) (Address (-1)))
+exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType) address)) = do
   (aType,_) <- getArrayInfo ident
-  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType))) (Simple aType))
+  -- TODO: Check this when arrays are a thing
+  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType) address)) (Simple aType) (Address (-1)))
 exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
 exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
   fDefinition <- findFunction fName
   returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
-  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) returnType)
+  -- TODO: Check this when functions are an actual thing
+  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) returnType (Address (-1)))
 exprCheck (FloatConversion sExpr) = do
-  value <- exprCheck sExpr
-  if expressionType value == Simple IntType
-    then return (Expr (FloatConversion sExpr) (Simple FloatType))
-    else fail "Only Int types can be converted to Float"
+  (Expr _ eType eAddress) <- exprCheck sExpr
+  guardFail (eType == Simple IntType) "Only int types can be converted to float"
+  quadFloatConvert sExpr eAddress
+-- TODO: Check this when objects are more a thing
 exprCheck (MemberAccess obj member) = do
-  var <- findVariable (memberKey obj member)
-  return (Expr (MemberAccess obj member) (variableType var))
+  (Variable vType _ address) <- findVariable (memberKey obj member)
+  return (Expr (MemberAccess obj member) vType address)
+-- TODO: Check this when functions are objects are more a thing
 exprCheck (MethodCallExpr (MethodCall objName methodName arguments)) = do
   var <- findVariable objName
   clsName <- extractClassName (variableType var)

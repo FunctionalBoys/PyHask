@@ -28,6 +28,7 @@ dependencies:
 - optparse-applicative
 - containers
 - data-default-class
+- hashable
 
 library:
   source-dirs: src

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a692c9dab05885e7af500c77cf429ade871e253bb395a1b4d419370e40e381fe
+-- hash: 639276d3eb2ac6040932013edadef81ef0c7409c8c9c58e0a811f83670108180
 
 name:           PyHask
 version:        0.1.0.0
@@ -43,6 +43,7 @@ library
       base >=4.7 && <5
     , containers
     , data-default-class
+    , hashable
     , megaparsec
     , mtl
     , optparse-applicative
@@ -62,6 +63,7 @@ executable PyHask-exe
     , base >=4.7 && <5
     , containers
     , data-default-class
+    , hashable
     , megaparsec
     , mtl
     , optparse-applicative
@@ -82,6 +84,7 @@ test-suite PyHask-test
     , base >=4.7 && <5
     , containers
     , data-default-class
+    , hashable
     , megaparsec
     , mtl
     , optparse-applicative

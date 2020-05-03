@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module ParserTypes where
 
 import           Control.Monad.State.Lazy
@@ -10,12 +12,25 @@ import           Data.Text                  (Text)
 import           Data.Void
 import           Text.Megaparsec
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Hashable
+import Data.Hashable.Generic (genericHashWithSalt)
+import GHC.Generics
 
 type Parser = StateT ParserState (Parsec Void Text)
 
 type IndentOpt = L.IndentOpt Parser
 
 data SimpleType = IntType | FloatType | BoolType | CharType deriving (Eq,Show)
+
+data Literal =
+    LiteralInt Int
+  | LiteralFloat Double
+  | LiteralChar Char
+  | LiteralBool Bool deriving (Eq,Show,Generic)
+
+instance Hashable Literal where
+  hashWithSalt s x = genericHashWithSalt s x
+  {-# INLINEABLE hashWithSalt #-}
 
 data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Text deriving (Eq,Show)
 

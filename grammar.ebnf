@@ -1,4 +1,4 @@
-Program ::= Declaration* Function* Class* 'main:' Block
+Program ::= (Declaration | Function | Class)* 'main:' Block
 SimpleType ::= ('int' | 'float' | 'string' | 'char' | 'bool')
 ComposedType ::= SimpleType '[' IntLiteral ']' | 'id'
 Class ::= 'class' 'id' ('(' 'id' ')')? ':' InitBlock Function*
@@ -19,7 +19,7 @@ MemberAccess ::= ('id' | 'self') '.' 'id' ('[' Expr ']')?
 Block ::= Statement+
 If ::= 'if' Expr ':' Block ('elif' Expr ':' Block)* ('else' Block)?
 While ::= 'while' Expr ':' Block
-For ::= 'for' 'id' (',' 'id')* ':' SimpleType ':=' Expr ':' Expr ':' Assignment+ ':' Block
+For ::= 'for' 'id' (',' 'id')* ':' SimpleType ':=' Expr ':' Expr ':' (Assignment (',' Assignment)*) ':' Block
 Expr ::= AndExpr 'or' Expr | AndExpr
 AndExpr ::= NotExpr 'and' AndExpr | NotExpr
 NotExpr ::= 'not'? CExpr

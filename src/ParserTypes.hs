@@ -41,10 +41,14 @@ data Variable = Variable {  variableType :: ComposedType,
                             variableInit :: Bool,
                             variableAddress :: Address
                          } deriving (Eq,Show)
-
 data Quad =
-    QuadOp Op Int Int Int
-  | QuadAssign Int Int deriving (Eq,Show)
+    QuadOp Op Address Address Address
+  | QuadFloatConvert Address Address
+  | QuadNot Address Address
+  | QuadNeg Address Address
+  | QuadRead Address
+  | QuadPrint Address
+  | QuadAssign Address Address deriving (Eq,Show)
 
 data ScopeType =
     ScopeTypeFor
@@ -251,7 +255,7 @@ data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,
                          forDeclarationType :: SimpleType,
                          forDeclarationExpr :: Expr,
                          forCondition       :: Expr,
-                         forAssignment      :: SimpleAssignment,
+                         forAssignment      :: NonEmpty SimpleAssignment,
                          forStatements      :: NonEmpty Statement
                         } deriving (Eq,Show)
 

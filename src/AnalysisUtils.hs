@@ -127,7 +127,7 @@ scoped :: ScopeType -> Parser a -> Parser a
 scoped sType = between (addScope sType) destroyScope
 
 createVariable :: ComposedType -> Maybe Expr -> Address -> Variable
-createVariable vType expr = Variable vType (isJust expr) 
+createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
 insertVariable v ident  = modifyScope (\(Scope sType ids variables vars temp) -> Scope sType ids (M.insert ident v variables) vars temp)

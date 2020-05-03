@@ -267,5 +267,3 @@ data CreateObject = CreateObject {  createObjectVariableName :: Text,
                                     createObjectClassName    :: Text,
                                     createObjectExpressions  :: [Expr]
                                 } deriving (Eq,Show)
-
-newtype Address = Address Int deriving (Eq,Show)

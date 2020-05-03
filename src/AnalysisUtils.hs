@@ -20,7 +20,7 @@ getValueReturn (ValueReturn sType) = return (Simple sType)
 getValueReturn _ = fail "Only functions that return values can be used in expression."
 
 exprSimpleType :: Expr -> Parser Expr
-exprSimpleType (Expr sExpr (Simple sType)) = return (Expr sExpr (Simple sType))
+exprSimpleType sExpr@Expr{expressionType=Simple _} = return sExpr
 exprSimpleType _ = fail "Expected a simple type"
 
 existsIdentifier :: Text -> Parser Bool
@@ -46,7 +46,9 @@ existsInScope variableIdentifier = do
     return $ any (elem variableIdentifier) (fmap scopeIdentifiers list)
 
 addIdentifier :: Text -> ParserState -> ParserState
-addIdentifier ident = modifyScope (\(Scope st ids v vars temp) -> Scope st (ident:ids) v vars temp)
+addIdentifier ident = modifyScope f
+  where
+    f scope@Scope{scopeIdentifiers=ids} = scope{scopeIdentifiers=ident:ids}
 
 findVariable :: Text -> Parser Variable
 findVariable ident = do
@@ -104,10 +106,10 @@ maybeInsideClass = do
   return $ asum $ fmap maybeClassName sTypes
 
 modifyScopes :: (NonEmpty Scope -> NonEmpty Scope) -> ParserState -> ParserState
-modifyScopes f (ParserState s d c q literals) = ParserState (f s) d c q literals
+modifyScopes f pState@ParserState{scopes=ss} = pState{scopes=f ss}
 
 modifyScope :: (Scope -> Scope) -> ParserState -> ParserState
-modifyScope f (ParserState (s N.:| ss) d c q literals) = ParserState (f s N.:| ss) d c q literals
+modifyScope f pState@ParserState{scopes=s N.:| ss} = pState{scopes = f s N.:| ss}
 
 addScope :: ScopeType -> Parser ()
 addScope sType = do
@@ -115,8 +117,8 @@ addScope sType = do
   modify $ addScope' sType currentScope
 
 addScope' :: ScopeType -> Scope -> (ParserState -> ParserState)
-addScope' sType (Scope ScopeTypeGlobal _ _ _ _ ) = modifyScopes $ N.cons (Scope sType [] M.empty newLocalVariables newLocalTemp)
-addScope' sType (Scope _ _ _ mVars mTemp) = modifyScopes $ N.cons (Scope sType [] M.empty mVars mTemp)
+addScope' sType Scope{scopeType=ScopeTypeGlobal} = modifyScopes $ N.cons (Scope sType [] M.empty newLocalVariables newLocalTemp)
+addScope' sType Scope{scopeVariablesMemory=mVars, scopeTempMemory=mTemp} = modifyScopes $ N.cons (Scope sType [] M.empty mVars mTemp)
 
 destroyScope :: Parser ()
 destroyScope = do
@@ -130,13 +132,15 @@ createVariable :: ComposedType -> Maybe Expr -> Address -> Variable
 createVariable vType expr = Variable vType (isJust expr)
 
 insertVariable :: Variable -> Text -> ParserState -> ParserState
-insertVariable v ident  = modifyScope (\(Scope sType ids variables vars temp) -> Scope sType ids (M.insert ident v variables) vars temp)
+insertVariable v ident  = modifyScope f
+  where
+    f scope@Scope{scopeVariables=variables} = scope {scopeVariables=M.insert ident v variables}
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
-insertFunction ident f (ParserState s fDefinitions c q literals) = ParserState s (M.insert ident f fDefinitions) c q literals
+insertFunction ident f pState@ParserState{functionDefinitions=fDefinitions} = pState{functionDefinitions=M.insert ident f fDefinitions}
 
 insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
-insertClassDefinition ident cls (ParserState s fs cDefinitions q literals) = ParserState s fs (M.insert ident cls cDefinitions) q literals
+insertClassDefinition ident cls pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.insert ident cls cDefinitions}
 
 emptyClassDefinition :: Maybe Text -> ClassDefinition
 emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) M.empty
@@ -147,38 +151,37 @@ findClass cName = do
   maybeFail ("Class " ++ T.unpack cName ++ " doesn't exist") (M.lookup cName cDefinitions)
 
 insertMemberToClass :: Text -> ClassMember -> ParserState -> ParserState
-insertMemberToClass clsName member (ParserState s f cDefinitions q literals) = ParserState s f (M.update updateF clsName cDefinitions) q literals
+insertMemberToClass clsName member pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
   where
-    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father (member:members) constructor methods)
+    updateF cDef@ClassDefinition{classDefinitionMembers=members} = Just cDef{classDefinitionMembers=member:members}
 
 insertMethodToClass :: Text -> Text -> FunctionDefinition -> ParserState -> ParserState
-insertMethodToClass clsName methodName method (ParserState s f cDefinitions q literals) = ParserState s f (M.update updateF clsName cDefinitions) q literals
+insertMethodToClass clsName methodName method pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
   where
-    updateF (ClassDefinition father members constructor methods) = Just (ClassDefinition father members constructor (M.insert methodName method methods))
+    updateF cDef@ClassDefinition{classDefinitionMethods=methods} = Just $ cDef{classDefinitionMethods=M.insert methodName method methods}
 
 insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
-insertConstructorToClass clsName constructor (ParserState s f cDefinitions q literals) = ParserState s f (M.update updateF clsName cDefinitions) q literals
+insertConstructorToClass clsName constructor pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
   where
-    updateF (ClassDefinition father members _ methods) = Just (ClassDefinition father members constructor methods)
+    updateF cDef = Just cDef{classDefinitionConstructor=constructor}
 
 registerObjectMembers :: ClassDefinition -> Text -> Parser ()
 registerObjectMembers cls ident = do
   let clsMembers = classDefinitionMembers cls
   forM_ clsMembers (registerMember ident)
 
+-- TODO: Review this when we get into more into objects
 registerMember :: Text -> ClassMember -> Parser()
-registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True) (memberKey objectIdent memberIdent)
+registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True (Address (-1))) (memberKey objectIdent memberIdent)
 
 setVariableAsInitialized :: Text -> ParserState -> ParserState
-setVariableAsInitialized ident (ParserState ss fs cs qs literals) = ParserState (updateF <$> ss) fs cs qs literals
+setVariableAsInitialized ident pState@ParserState{scopes=ss} = pState{scopes=updateF <$> ss}
   where
-    updateF (Scope sT sI sVariables vars temp) = Scope sT sI (M.update f ident sVariables) vars temp
-    f (Variable vT _ address) = Just (Variable vT True address)
+    updateF scope@Scope{scopeVariables=variables} = scope{scopeVariables=M.update f ident variables}
+    f var = Just var{variableInit=True}
 
 insideLoop :: Text -> Parser ()
 insideLoop symbolName = do
   existsFor <- existsScope ScopeTypeFor
   existsWhile <- existsScope ScopeTypeWhile
-  if existsFor || existsWhile
-    then return ()
-    else fail $ T.unpack symbolName ++ " must be inside a loop"
+  guardFail (existsFor || existsWhile) $ T.unpack symbolName ++ " must be inside a loop"

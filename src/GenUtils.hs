@@ -7,16 +7,16 @@ import           ParserTypes
 import           Utils
 
 quadruplesCounter :: ParserState -> Int
-quadruplesCounter (ParserState _ _ _ quads) = S.length quads
+quadruplesCounter (ParserState _ _ _ quads _) = S.length quads
 
 addQuadruple :: Quad -> ParserState -> ParserState
-addQuadruple quad (ParserState ss fs cs quads) = ParserState ss fs cs (quads S.|> quad)
+addQuadruple quad (ParserState ss fs cs quads literals) = ParserState ss fs cs (quads S.|> quad) literals
 
 updateQuadruple :: Int -> Quad -> ParserState -> ParserState
-updateQuadruple index quad (ParserState ss fs cs quads) = ParserState ss fs cs (S.update index quad quads)
+updateQuadruple index quad (ParserState ss fs cs quads literals) = ParserState ss fs cs (S.update index quad quads) literals
 
 lookupQuadruple :: Int -> ParserState -> Maybe Quad
-lookupQuadruple i (ParserState _ _ _ quads) = quads S.!? i
+lookupQuadruple i (ParserState _ _ _ quads _) = quads S.!? i
 
 safeQuadrupleUpdate :: (Quad -> Either String Quad) -> Int -> Parser ()
 safeQuadrupleUpdate f index = do

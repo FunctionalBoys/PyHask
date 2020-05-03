@@ -29,6 +29,7 @@ dependencies:
 - containers
 - data-default-class
 - hashable
+- unordered-containers
 
 library:
   source-dirs: src

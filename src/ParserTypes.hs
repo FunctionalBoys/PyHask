@@ -4,17 +4,18 @@ module ParserTypes where
 
 import           Control.Monad.State.Lazy
 import           Data.Default.Class
+import           Data.Hashable
+import           Data.Hashable.Generic      (genericHashWithSalt)
+import qualified Data.HashMap.Strict        as H
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty         as N
 import qualified Data.Map.Strict            as M
 import qualified Data.Sequence              as S
 import           Data.Text                  (Text)
 import           Data.Void
+import           GHC.Generics
 import           Text.Megaparsec
 import qualified Text.Megaparsec.Char.Lexer as L
-import Data.Hashable
-import Data.Hashable.Generic (genericHashWithSalt)
-import GHC.Generics
 
 type Parser = StateT ParserState (Parsec Void Text)
 
@@ -66,6 +67,10 @@ data MemoryBlock = MemoryBlock { memoryBlockInt   :: TypeMemoryBlock,
                                  memoryBlockBool  :: TypeMemoryBlock
                                } deriving (Eq,Show)
 
+data LiteralBlock = LiteralBlock { literalMemoryBlock :: MemoryBlock,
+                                   literalAddressMap  :: H.HashMap Literal Address
+                                 } deriving (Eq,Show)
+
 data Scope = Scope { scopeType            :: ScopeType,
                      scopeIdentifiers     :: [Text],
                      scopeVariables       :: M.Map Text Variable,
@@ -81,7 +86,8 @@ data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
                                  functionDefinitions  :: M.Map Text FunctionDefinition,
                                  classDefinitions     :: M.Map Text ClassDefinition,
-                                 quadruplesSequence   :: S.Seq Quad
+                                 quadruplesSequence   :: S.Seq Quad,
+                                 literalBlock         :: LiteralBlock
                                } deriving (Eq,Show)
 
 newTypeMemoryBlock :: Int -> Int -> TypeMemoryBlock
@@ -93,8 +99,17 @@ globalVariables = MemoryBlock (newTypeMemoryBlock 0 1000) (newTypeMemoryBlock 10
 globalTemp :: MemoryBlock
 globalTemp = MemoryBlock (newTypeMemoryBlock 4001 6000) (newTypeMemoryBlock 6001 8000) (newTypeMemoryBlock 8001 10000) (newTypeMemoryBlock 10001 12000)
 
+newLocalVariables :: MemoryBlock
+newLocalVariables = MemoryBlock (newTypeMemoryBlock 12001 16000) (newTypeMemoryBlock 16001 20000) (newTypeMemoryBlock 20001 24000) (newTypeMemoryBlock 24001 28000)
+
+newLocalTemp :: MemoryBlock
+newLocalTemp = MemoryBlock (newTypeMemoryBlock 28001 32000) (newTypeMemoryBlock 32001 36000) (newTypeMemoryBlock 36001 40000) (newTypeMemoryBlock 40001 44000)
+
+literalsBlock :: MemoryBlock
+literalsBlock = MemoryBlock (newTypeMemoryBlock 44001 46000) (newTypeMemoryBlock 46001 48000) (newTypeMemoryBlock 48001 50000) (newTypeMemoryBlock 50001 50002)
+
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal [] M.empty globalVariables globalTemp N.:| []) M.empty M.empty S.empty
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty globalVariables globalTemp N.:| []) M.empty M.empty S.empty (LiteralBlock literalsBlock H.empty)
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr
@@ -249,3 +264,5 @@ data CreateObject = CreateObject {  createObjectVariableName :: Text,
                                     createObjectClassName    :: Text,
                                     createObjectExpressions  :: [Expr]
                                 } deriving (Eq,Show)
+
+newtype Address = Address Int deriving (Eq,Show)

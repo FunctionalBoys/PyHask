@@ -21,10 +21,12 @@ import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import           Utils
+import GenUtils
+import Data.Sequence (Seq)
 
 mainParser :: Parser MainProgram
 mainParser = do
-  mainProgramDefinitions <- many $ choice $ fmap nonIndented [ MainProgramFunction <$> functionParser <?> "function definition"
+  mainProgramDefinitions <- many $ nonIndented $ choice [ MainProgramFunction <$> functionParser <?> "function definition"
                                                              , MainProgramDeclaration <$> declaration <?> "global variable"
                                                              , MainProgramClass <$> classParser <?> "class definition"]
   label "main block definition" $ nonIndented $ scoped ScopeTypeMain $ indentBlock $ mainBlock mainProgramDefinitions
@@ -36,14 +38,15 @@ mainParser = do
 programParser :: Parser MainProgram
 programParser = between space eof mainParser
 
-parseProgram :: String -> Text -> Either String MainProgram
-parseProgram filename input = first errorBundlePretty $ runParser (evalStateT programParser def) filename input
+parseProgram :: String -> Text -> Either String (MainProgram, Seq Quad)
+parseProgram filename input = bimap errorBundlePretty f $ runParser (runStateT programParser def) filename input
+  where f = second quadruplesSequence
 
 newIdentifierCheck :: (Text -> ParserState -> ParserState) -> Parser Text
 newIdentifierCheck f = do
   ident <- identifier
   exists <- existsIdentifier ident
-  guardFail exists ("Identifier " ++ T.unpack ident ++ " already defined")
+  guardFail (not exists) ("Identifier " ++ T.unpack ident ++ " already defined")
   ident <$ modify (f ident)
 
 newIdentifier :: Parser Text
@@ -63,7 +66,8 @@ functionArgument = do
   argumentName <- newIdentifier
   colonSymbol
   argumentType <- simpleType
-  modify $ insertVariable (Variable (Simple argumentType) True) argumentName
+  address <- nextVarAddress argumentType
+  modify $ insertVariable (Variable (Simple argumentType) True address) argumentName
   return FunctionArgument{..}
 
 functionParser :: Parser Function
@@ -109,17 +113,19 @@ ifParser = do
 printParser :: Parser Statement
 printParser = do
   printSymbol
-  e <- parens $ expr >>= exprSimpleType
-  return (PrintStatement e)
+  pExpr@(Expr _ _ address) <- parens $ expr >>= exprSimpleType
+  registerQuadruple $ QuadPrint address
+  return (PrintStatement pExpr)
 
 readParser :: Parser Statement
 readParser = do
   ident <- identifier
   equalSymbol
   readSymbol
-  (Variable variableT _) <- findVariable ident
+  (Variable variableT _ address) <- findVariable ident
   sType <- extractSimpleType variableT
   modify $ setVariableAsInitialized ident
+  registerQuadruple $ QuadRead address
   return (ReadStatement ident sType)
 
 functionCallParser :: Parser FunctionCall
@@ -134,7 +140,7 @@ functionCallParser = do
 methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> identifier
-  (Variable vType _) <- findVariable methodCallObjectName
+  (Variable vType _ _) <- findVariable methodCallObjectName
   clsName <- extractClassName vType
   cls <- findClass clsName
   dotSymbol
@@ -156,7 +162,7 @@ returnParser = do
   guardFail (rExpr == rType) "Return type does not match function type"
   return (ReturnStatement mExpr)
   where
-    check (Expr _ (Simple sType)) = Just (ValueReturn sType)
+    check (Expr _ (Simple sType) _) = Just (ValueReturn sType)
     check _                       = Nothing
 
 declaration :: Parser Declaration
@@ -165,15 +171,17 @@ declaration = letSymbol *> do
   idType <- colonSymbol *> composedType
   rExpr <- optional $ equalSymbol *> expr
   guardFail (maybe True ((== idType) . expressionType) rExpr) "Expression must match type"
-  memoryBlock <- gets currentMemoryBlock
   case idType of
     ClassType _ -> fail "Use create statement for object declaration"
-    Simple sType -> do
-      (mB, address) <- getNextTypeAddress
-      forM_  identifiers (modify . insertVariable (createVariable idType rExpr address))
-      modify $ updateCurrentMemoryBlock mB
-      _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr (Address -1))) -- TODO: TODO :TODO :TODO
+    Simple sType -> forM_  identifiers (addId sType rExpr)
+    _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr (Address (-1)))) -- TODO: TODO :TODO :TODO
   return (Declaration identifiers idType rExpr)
+    where
+      addId sType mExpr ident = do
+        address <- nextVarAddress sType
+        modify $ insertVariable (createVariable (Simple sType) mExpr address) ident
+        maybe (return ()) (assign address) mExpr
+      assign varAddress (Expr _ _ address) = registerQuadruple $ QuadAssign address varAddress
 
 statement :: Parser Statement
 statement = choice [ continueParser
@@ -241,9 +249,9 @@ exprString = StringLiteral <$> stringLiteral
 
 exprChar :: Parser SimpleExpr
 exprChar = do
-  char <- charLiteral
-  address <- getLiteralAddress $ LiteralChar char
-  return (CharLiteral char address)
+  chr <- charLiteral
+  address <- getLiteralAddress $ LiteralChar chr
+  return (CharLiteral chr address)
 
 factor :: Parser SimpleExpr
 factor = choice [ parens simpleExpr
@@ -333,16 +341,20 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
       colonSymbol
       forDeclarationType <- simpleType
       equalSymbol
-      forDeclarationExpr <- expr
-      forM_ forDeclaration (modify . insertVariable (createVariable (Simple forDeclarationType) (Just forDeclarationExpr)))
+      forDeclarationExpr@(Expr _ _ address) <- expr
+      forM_ forDeclaration (f forDeclarationType address)
       guardFail (expressionType forDeclarationExpr == Simple forDeclarationType) "Expression type must be the same as the declaration type"
       colonSymbol
       forCondition <- expr
       guardFail (expressionType forCondition == Simple BoolType) "Only boolean expressions can be used in for condition"
       colonSymbol
-      forAssigment <- simpleAssignment
+      forAssigment <- sepBy1 simpleAssignment commaSymbol
       colonSymbol
       indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forAssigment) statement
+    f sType tAddress ident = do
+      address <- nextVarAddress sType
+      registerQuadruple $ QuadAssign tAddress address
+      modify $ insertVariable (Variable (Simple sType) True address) ident
 
 classMember :: Parser ClassMember
 classMember = do
@@ -363,7 +375,8 @@ classConstructorParameter = do
   classConstructorParameterId <- newIdentifier
   colonSymbol
   classConstructorParameterType <- composedType
-  modify $ insertVariable (Variable classConstructorParameterType True) classConstructorParameterId
+  -- TODO: Deal with this when objects are more of a thing
+  modify $ insertVariable (Variable classConstructorParameterType True (Address (-1))) classConstructorParameterId
   return ClassConstructorParameter{..}
 
 classConstructorParser :: Parser ClassConstructor
@@ -418,7 +431,8 @@ classParser = scoped ScopePlaceholder $ indentBlock classBlock
       modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeClass className) ids vars mVars mTemp)
       classFather <- optional $ parens checkIdentifierClass
       modify $ insertClassDefinition className (emptyClassDefinition classFather)
-      modify $ insertVariable (Variable (ClassType className) True) "self"
+      -- TODO: Deal with this when objects are more a thing
+      modify $ insertVariable (Variable (ClassType className) True (Address (-1))) "self"
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper
     helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser
@@ -438,6 +452,7 @@ createObjectParser =  do
   let exprsTypes = expressionType <$> exprs
   let constructorTypes = classConstructorParameterType <$> (classConstructorParameters . classDefinitionConstructor) cls
   guardFail (exprsTypes == constructorTypes) "Expressions for constructor do not match"
-  modify (insertVariable (Variable (ClassType clsName) True) variableName)
+  -- TODO: Deal with this when objects are more a thing
+  modify (insertVariable (Variable (ClassType clsName) True (Address (-1))) variableName)
   registerObjectMembers cls variableName
   return $ CreateObject variableName clsName exprs

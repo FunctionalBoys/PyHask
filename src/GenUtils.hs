@@ -6,6 +6,7 @@ import qualified Data.List.NonEmpty       as N
 import qualified Data.Sequence            as S
 import           ParserTypes
 import           Utils
+import qualified Data.HashMap.Strict      as H
 
 quadruplesCounter :: ParserState -> Int
 quadruplesCounter (ParserState _ _ _ quads _) = S.length quads
@@ -48,3 +49,21 @@ increaseCurrentAddress IntType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock (mem
 increaseCurrentAddress FloatType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI (memoryBlockIncrease tMF) tMC tMB
 increaseCurrentAddress CharType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF (memoryBlockIncrease tMC) tMB
 increaseCurrentAddress BoolType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF tMC (memoryBlockIncrease tMB)
+
+getNextTypeAddress :: SimpleType -> MemoryBlock -> Parser (MemoryBlock, Address)
+getNextTypeAddress sT mB = do
+  let mAddress = getNextAddress sT mB
+  address <- maybeFail "Out of memory error" mAddress
+  return (increaseCurrentAddress sT mB, address)
+
+currentMemoryBlock :: ParserState -> MemoryBlock
+currentMemoryBlock (ParserState (Scope _ _ _ memoryblock _ N.: _) _ _ _ _) = memoryblock
+
+updateCurrentMemoryBlock :: MemoryBlock -> ParserState -> ParserState
+updateCurrentMemoryBlock memoryBlock (ParserState (Scope sT sI sV _ sTM N.: next) q w e r) = (ParserState (Scope sT sI sV memoryBlock sTM N.: next) q w e r)
+
+updateCurrentTemp :: MemoryBlock -> ParserState -> ParserState
+updateCurrentTemp memoryBlock (ParserState (Scope sT sI sV sM _ N.: next) q w e r) = (ParserState (Scope sT sI sV SM memoryBlock N.: next) q w e r)
+
+lookupLiteral :: Literal -> ParserState -> Maybe Address
+lookupLiteral literal (ParserState _ _ _ _ (LiteralBlock _ lMap)) = H.lookup literal lMap

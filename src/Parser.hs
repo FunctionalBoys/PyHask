@@ -165,9 +165,14 @@ declaration = letSymbol *> do
   idType <- colonSymbol *> composedType
   rExpr <- optional $ equalSymbol *> expr
   guardFail (maybe True ((== idType) . expressionType) rExpr) "Expression must match type"
+  memoryBlock <- gets currentMemoryBlock
   case idType of
     ClassType _ -> fail "Use create statement for object declaration"
-    _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr))
+    Simple sType -> do
+      (mB, address) <- getNextTypeAddress
+      forM_  identifiers (modify . insertVariable (createVariable idType rExpr address))
+      modify $ updateCurrentMemoryBlock mB
+      _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr (Address -1))) -- TODO: TODO :TODO :TODO
   return (Declaration identifiers idType rExpr)
 
 statement :: Parser Statement

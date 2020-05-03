@@ -8,11 +8,11 @@ import           Utils
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck (Var ident) = do
-  (Variable vType initialized) <- findVariable ident
+  (Variable vType initialized address) <- findVariable ident
   if not initialized
     then fail $ "Can't use uninitailized variable " ++ T.unpack ident
   else
-    return (Expr (Var ident) vType)
+    return (Expr (Var ident) vType address)
 exprCheck (IntLiteral integer) = return (Expr (IntLiteral integer) (Simple IntType))
 exprCheck (FloatLiteral float) = return (Expr (FloatLiteral float) (Simple FloatType))
 exprCheck (BoolLiteral bool) = return (Expr (BoolLiteral bool) (Simple BoolType))

@@ -223,7 +223,8 @@ data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And
 newtype Address = Address Int deriving (Eq,Show)
 
 data Expr = Expr { innerExpression :: SimpleExpr,
-                   expressionType  :: ComposedType
+                   expressionType  :: ComposedType,
+                   memoryAddess    :: Address
                  } deriving (Eq,Show)
 
 data SimpleExpr =

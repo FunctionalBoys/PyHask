@@ -1,4 +1,6 @@
 let x : int := 1
+let y : float := 2.0
+let o: int := x
 
 def h() -> void:
   pass
@@ -9,7 +11,6 @@ class Hola:
       pass
 
   def f(d : float) -> int:
-    let de : string := 'hola'
     pass
 
 class MemberedClass:
@@ -48,6 +49,9 @@ main:
   create a : Hola(5)
   create m : MemberedClass(5+2,1.0+p(1.0))
   m.f(1)
-  g(2+m.f(1))
-  while True:
+  p(2+1.0)
+  let abc, perro : float := y * x
+  let result : float := (x + y * abc / perro) ** 2
+  print(result)
+  while x + y == 3:
     print(1)

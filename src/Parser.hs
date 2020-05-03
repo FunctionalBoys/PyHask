@@ -213,13 +213,22 @@ exprArrayAccess = do
   return (ArrayAccess ident index)
 
 exprInt :: Parser SimpleExpr
-exprInt = IntLiteral <$> intLiteral
+exprInt = do
+  integer <- intLiteral
+  address <- getLiteralAddress $ LiteralInt integer
+  return (IntLiteral integer address)
 
 exprFloat :: Parser SimpleExpr
-exprFloat = FloatLiteral <$> floatLiteral
+exprFloat = do
+  float <- floatLiteral
+  address <- getLiteralAddress $ LiteralFloat float
+  return (FloatLiteral float address)
 
 exprBool :: Parser SimpleExpr
-exprBool = BoolLiteral <$> (trueSymbol <|> falseSymbol)
+exprBool = do
+  bool <- trueSymbol <|> falseSymbol
+  address <- getLiteralAddress $ LiteralBool bool
+  return (BoolLiteral bool address)
 
 exprFunctionCall :: Parser SimpleExpr
 exprFunctionCall = FunctionCallExpr <$> functionCallParser
@@ -231,7 +240,10 @@ exprString :: Parser SimpleExpr
 exprString = StringLiteral <$> stringLiteral
 
 exprChar :: Parser SimpleExpr
-exprChar = CharLiteral <$> charLiteral
+exprChar = do
+  char <- charLiteral
+  address <- getLiteralAddress $ LiteralChar char
+  return (CharLiteral char address)
 
 factor :: Parser SimpleExpr
 factor = choice [ parens simpleExpr

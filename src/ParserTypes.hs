@@ -229,16 +229,16 @@ data Expr = Expr { innerExpression :: SimpleExpr,
 
 data SimpleExpr =
     Var Text
-  | IntLiteral Int
-  | FloatLiteral Double
-  | BoolLiteral Bool
+  | IntLiteral Int Address
+  | FloatLiteral Double Address
+  | BoolLiteral Bool Address
   | FunctionCallExpr FunctionCall
   | MethodCallExpr MethodCall
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr
   | StringLiteral String
-  | CharLiteral Char
+  | CharLiteral Char Address
   | Operate Op SimpleExpr SimpleExpr
   | FloatConversion SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)

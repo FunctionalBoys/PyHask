@@ -191,7 +191,7 @@ falseSymbol :: Parser Bool
 falseSymbol = False <$ reservedWord "False"
 
 stringLiteral :: Parser String
-stringLiteral = char '"' >> manyTill alphaNumChar (char '"')
+stringLiteral = char '"' *> manyTill alphaNumChar (char '"')
 
 charLiteral :: Parser Char
 charLiteral = between (char '\'') (char '\'') alphaNumChar

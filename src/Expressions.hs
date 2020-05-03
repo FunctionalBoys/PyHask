@@ -62,37 +62,65 @@ exprCheck (MethodCallExpr (MethodCall objName methodName arguments)) = do
   fDefinition <- maybeFail "Method definition not found" $  M.lookup methodName (classDefinitionMethods cls)
   let returnType = functionDefinitionReturnType fDefinition
   exprType <- getValueReturn returnType
-  return (Expr (MethodCallExpr (MethodCall objName methodName arguments)) exprType)
+  return (Expr (MethodCallExpr (MethodCall objName methodName arguments)) exprType (Address (-1)))
 exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2
   combineExpressions op expr1 expr2
 
+arithmeticOperations :: [Op]
+arithmeticOperations = [Sum, Minus, Times, Div, Exp]
+
+booleanOperations :: [Op]
+booleanOperations = [And, Or]
+
+comparisonOperators :: [Op]
+comparisonOperators = [Eq, NEq, Lt, Gt, Lte, Gte]
+
+isArithmeticOperator :: Op -> Bool
+isArithmeticOperator op = op `elem` arithmeticOperations
+
+isBooleanOperator :: Op -> Bool
+isBooleanOperator op = op `elem` booleanOperations
+
+
+isComparisonOperator :: Op -> Bool
+isComparisonOperator op = op `elem` comparisonOperators
+
+isNumericType :: SimpleType -> Bool
+isNumericType IntType = True
+isNumericType FloatType = True
+isNumericType _ = False
+
+quadFloatConvert :: SimpleExpr -> Address -> Parser Expr
+quadFloatConvert sExpr address = do
+  nAddress <- nextTempAddress FloatType
+  registerQuadruple $ QuadFloatConvert address nAddress
+  return $ Expr (FloatConversion sExpr) (Simple FloatType) nAddress
+
+convertToFloat :: Expr -> Parser Expr
+convertToFloat expr@Expr{expressionType=Simple FloatType} = return expr
+convertToFloat (Expr sExpr (Simple IntType) address) = quadFloatConvert sExpr address
+convertToFloat _ = fail "Attempting to convert not integer value"
+
+allocateAndGenerateOp :: Op -> Expr  -> Expr -> SimpleType -> Parser Expr
+allocateAndGenerateOp op (Expr sExpr1 _ a1) (Expr sExpr2 _ a2) sType = do
+  address <- nextTempAddress sType
+  registerQuadruple $ QuadOp op a1 a2 address
+  return $ Expr (Operate op sExpr1 sExpr2) (Simple sType) address
+
 -- Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or
 combineExpressions :: Op -> Expr -> Expr -> Parser Expr
-combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple IntType))
-combineExpressions Sum (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Sum sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Sum (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Sum (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Sum sExpr1 sExpr2) (Simple FloatType))
-combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Minus sExpr1 sExpr2) (Simple IntType))
-combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Minus sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Minus (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Minus (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Minus (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Minus sExpr1 sExpr2) (Simple FloatType))
-combineExpressions Times (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Times sExpr1 sExpr2) (Simple IntType))
-combineExpressions Times (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Times sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Times (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Times (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Times (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Times sExpr1 sExpr2) (Simple FloatType))
-combineExpressions Div (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Div (FloatConversion sExpr1) (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Div (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Div sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Div (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Div (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Div (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return  (Expr (Operate Div sExpr1 sExpr2) (Simple FloatType))
-combineExpressions Exp (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Exp (FloatConversion sExpr1) (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Exp (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple IntType)) = return (Expr (Operate Exp sExpr1 (FloatConversion sExpr2)) (Simple FloatType))
-combineExpressions Exp (Expr sExpr1 (Simple IntType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Exp (FloatConversion sExpr1) sExpr2) (Simple FloatType))
-combineExpressions Exp (Expr sExpr1 (Simple FloatType)) (Expr sExpr2 (Simple FloatType)) = return (Expr (Operate Exp sExpr1 sExpr2) (Simple FloatType))
-combineExpressions And (Expr sExpr1 (Simple BoolType)) (Expr sExpr2 (Simple BoolType)) = return (Expr (Operate And sExpr1 sExpr2) (Simple BoolType))
-combineExpressions Or (Expr sExpr1 (Simple BoolType)) (Expr sExpr2 (Simple BoolType)) = return (Expr (Operate Or sExpr1 sExpr2) (Simple BoolType))
-combineExpressions _ (Expr _ (ClassType _)) (Expr _ (ClassType _)) = fail "No operators available between classes."
-combineExpressions op (Expr sExpr1 t1) (Expr sExpr2 t2)
-  | t1 == t2 && (t1 == Simple IntType || t1 == Simple FloatType) = return (Expr (Operate op sExpr1 sExpr2) (Simple BoolType))
-  | otherwise = fail "Types can not be compared."
+combineExpressions op expr1@(Expr _ (Simple t1) _) expr2@(Expr _ (Simple t2) _)
+  | isArithmeticOperator op && t1 == t2 && isNumericType t1 = allocateAndGenerateOp op expr1 expr2 t1
+  | isArithmeticOperator op && isNumericType t1 && isNumericType t2 = do
+      fExpr1 <- convertToFloat expr1
+      fExpr2 <- convertToFloat expr2
+      allocateAndGenerateOp op fExpr1 fExpr2 FloatType
+combineExpressions op expr1@(Expr _ (Simple t1) _) expr2@(Expr _ (Simple t2) _)
+  | isBooleanOperator op || isComparisonOperator op && t1 == t2 = allocateAndGenerateOp op expr1 expr2 BoolType
+  | isBooleanOperator op || isComparisonOperator op && isNumericType t1 && isNumericType t2 = do
+      fExpr1 <- convertToFloat expr1
+      fExpr2 <- convertToFloat expr2
+      allocateAndGenerateOp op fExpr1 fExpr2 BoolType
+combineExpressions _ _ _ = fail "No operation allowed between expressions"

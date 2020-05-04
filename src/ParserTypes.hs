@@ -56,6 +56,7 @@ data Quad =
   | QuadGOTOPlaceholder
   | QuadGOTO Int
   | QuadNoOP
+  | QuadEnd
   deriving (Eq,Show)
 
 data ScopeType =

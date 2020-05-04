@@ -29,7 +29,7 @@ mainParser = do
   mainProgramDefinitions <- many $ nonIndented $ choice [ MainProgramFunction <$> functionParser <?> "function definition"
                                                              , MainProgramDeclaration <$> declaration <?> "global variable"
                                                              , MainProgramClass <$> classParser <?> "class definition"]
-  label "main block definition" $ nonIndented $ scoped ScopeTypeMain $ indentBlock $ mainBlock mainProgramDefinitions
+  label "main block definition" $ nonIndented $ scoped ScopeTypeMain $ (indentBlock $ mainBlock mainProgramDefinitions) <* registerQuadruple QuadEnd
   where
     mainBlock mainProgramDefinitions = do
       mainSymbol *> colonSymbol

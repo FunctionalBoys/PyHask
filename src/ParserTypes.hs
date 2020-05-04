@@ -48,7 +48,14 @@ data Quad =
   | QuadNeg Address Address
   | QuadRead Address
   | QuadPrint Address
-  | QuadAssign Address Address deriving (Eq,Show)
+  | QuadAssign Address Address 
+  | QuadFPlaceholder Address
+  | QuadF Address Int
+  | QuadTPlaceholder Address
+  | QuadT Address Int
+  | QuadGOTOPlaceholder
+  | QuadGOTO Int
+  deriving (Eq,Show)
 
 data ScopeType =
     ScopeTypeFor
@@ -248,6 +255,7 @@ data SimpleExpr =
   | ArrayAccess Text Expr deriving (Eq, Show)
 
 data WhileLoop = WhileLoop { whileCondition  :: Expr,
+                             whileConditionEnd :: Int,
                              whileStatements :: NonEmpty Statement
                            } deriving (Eq,Show)
 

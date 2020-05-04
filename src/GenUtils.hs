@@ -30,6 +30,18 @@ safeQuadrupleUpdate f index = do
   newQuad <- liftEither <<< f $ quad
   modify $ updateQuadruple index newQuad
 
+fillGOTOF :: Int -> Quad -> Either String Quad
+fillGOTOF index (QuadFPlaceholder address) = Right $ QuadF address index
+fillGOTOF _ _ = Left "Wrong Placeholder"
+
+fillGOTOT :: Int -> Quad -> Either String Quad
+fillGOTOT index (QuadTPlaceholder address) = Right $ QuadT address index
+fillGOTOT _ _ = Left "Wrong Placeholder"
+
+fillGOTO :: Int -> Quad -> Either String Quad
+fillGOTO index QuadGOTOPlaceholder = Right $ QuadGOTO index
+fillGOTO _ _ = Left "Wrong Placeholder"
+
 memoryBlockToMaybeAddress :: TypeMemoryBlock -> Maybe Address
 memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection )
   | cDirection <= mUBound = Just (Address cDirection)

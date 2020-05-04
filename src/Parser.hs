@@ -88,13 +88,21 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
     f fDefinition fName clsName = modify $ insertMethodToClass clsName fName fDefinition
 
 whileParser :: Parser WhileLoop
-whileParser = scoped ScopeTypeWhile $ indentBlock whileBlock
+whileParser = do
+  cont <- gets quadruplesCounter
+  whileLoop@WhileLoop{whileConditionEnd = end} <- scoped ScopeTypeWhile $ indentBlock whileBlock
+  registerQuadruple $ QuadGOTO cont
+  cont2 <- gets quadruplesCounter
+  safeQuadrupleUpdate (fillGOTOF cont2) end 
+  return whileLoop
   where
     whileBlock = do
       whileSymbol
-      whileCondition <- expr
+      whileCondition@Expr{memoryAddess = address} <- expr
+      whileConditionEnd <- gets quadruplesCounter
+      registerQuadruple $ QuadFPlaceholder address
       guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions can be used in while condition"
-      colonSymbol *> indentSome (return . WhileLoop whileCondition) statement
+      colonSymbol *> indentSome (return . WhileLoop whileCondition whileConditionEnd) statement
 
 ifParser :: Parser Conditional
 ifParser = do

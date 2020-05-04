@@ -207,7 +207,7 @@ declaration = letSymbol *> do
 statement :: Parser Statement
 statement = choice [ continueParser
                    , breakParser
-                   , passSymbol
+                   , passSymbol <* registerQuadruple QuadNoOP
                    , returnParser <?> "function return"
                    , ObjectAssignmentStatement <$> try objectAssignment <?> "object assignment"
                    , ArrayAssignmentStatement <$> try arrayAssignmet <?> "array assignment"

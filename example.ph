@@ -21,7 +21,7 @@ class MemberedClass:
     MemberedClass(i: int, f: float):
       self.member1 := i
       self.member2 := f
-
+ 
   def f(i: int) -> void:
     self.member1 := i
 
@@ -63,3 +63,5 @@ main:
     print(3)
   else
     print(4)
+  for i: int := 0 : i < 10 : i := i + 1:
+    print(i)

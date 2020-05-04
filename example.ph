@@ -55,3 +55,11 @@ main:
   print(result)
   while x + y == 3:
     print(1)
+  if 3 > 2:
+    print(1)
+  elif True:
+    print(2)
+  elif 3 >= 2:
+    print(3)
+  else
+    print(4)

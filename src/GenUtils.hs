@@ -32,15 +32,15 @@ safeQuadrupleUpdate f index = do
 
 fillGOTOF :: Int -> Quad -> Either String Quad
 fillGOTOF index (QuadFPlaceholder address) = Right $ QuadF address index
-fillGOTOF _ _ = Left "Wrong Placeholder"
+fillGOTOF _ quad = Left $ show quad ++ " is not goto false placeholder"
 
 fillGOTOT :: Int -> Quad -> Either String Quad
 fillGOTOT index (QuadTPlaceholder address) = Right $ QuadT address index
-fillGOTOT _ _ = Left "Wrong Placeholder"
+fillGOTOT _ quad = Left $ show quad ++ " is not goto true placeholder"
 
 fillGOTO :: Int -> Quad -> Either String Quad
 fillGOTO index QuadGOTOPlaceholder = Right $ QuadGOTO index
-fillGOTO _ _ = Left "Wrong Placeholder"
+fillGOTO _  quad = Left $ show quad ++ " is not goto placeholder"
 
 memoryBlockToMaybeAddress :: TypeMemoryBlock -> Maybe Address
 memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection )

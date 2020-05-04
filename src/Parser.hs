@@ -355,7 +355,12 @@ objectAssignment = do
   return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop
-forParser = scoped ScopeTypeFor $ indentBlock forBlock
+forParser = do
+  forLoop@ForLoop{forConditionEnd=conditionEnd,forAssignmentStart=assignmentStart} <- scoped ScopeTypeFor $ indentBlock forBlock
+  registerQuadruple $ QuadGOTO assignmentStart
+  endFor <- gets quadruplesCounter
+  safeQuadrupleUpdate (fillGOTOF endFor) conditionEnd
+  return forLoop
   where
     forBlock = do
       forSymbol
@@ -367,12 +372,21 @@ forParser = scoped ScopeTypeFor $ indentBlock forBlock
       forM_ forDeclaration (f forDeclarationType address)
       guardFail (expressionType forDeclarationExpr == Simple forDeclarationType) "Expression type must be the same as the declaration type"
       colonSymbol
-      forCondition <- expr
+      forConditionStart <- gets quadruplesCounter
+      forCondition@Expr{memoryAddess=conditionAddress} <- expr
       guardFail (expressionType forCondition == Simple BoolType) "Only boolean expressions can be used in for condition"
+      forConditionEnd <- gets quadruplesCounter
+      registerQuadruple $ QuadFPlaceholder conditionAddress
+      inconditionalJump <- gets quadruplesCounter
+      registerQuadruple QuadGOTOPlaceholder
       colonSymbol
+      forAssignmentStart <- gets quadruplesCounter
       forAssigment <- sepBy1 simpleAssignment commaSymbol
+      registerQuadruple $ QuadGOTO forConditionStart
       colonSymbol
-      indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forAssigment) statement
+      blockStart <- gets quadruplesCounter
+      safeQuadrupleUpdate (fillGOTO blockStart) inconditionalJump
+      indentSome (return . ForLoop forDeclaration forDeclarationType forDeclarationExpr forCondition forConditionEnd forAssignmentStart forAssigment) statement
     f sType tAddress ident = do
       address <- nextVarAddress sType
       registerQuadruple $ QuadAssign tAddress address

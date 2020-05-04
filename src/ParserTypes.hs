@@ -265,6 +265,8 @@ data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,
                          forDeclarationType :: SimpleType,
                          forDeclarationExpr :: Expr,
                          forCondition       :: Expr,
+                         forConditionEnd    :: Int,
+                         forAssignmentStart :: Int,
                          forAssignment      :: NonEmpty SimpleAssignment,
                          forStatements      :: NonEmpty Statement
                         } deriving (Eq,Show)

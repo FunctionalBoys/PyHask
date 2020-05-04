@@ -113,9 +113,12 @@ ifParser = do
     where
       indentedCondition firstSymbol = do
         _ <- firstSymbol
-        conditionalExpr <- expr
+        conditionalStart <- gets quadruplesCounter
+        conditionalExpr@Expr{memoryAddess = address} <- expr
+        conditionalEnd <- gets quadruplesCounter
+        registerQuadruple $ QuadGOTOFPlaceholder address
         guardFail (expressionType conditionalExpr == Simple BoolType) "Only boolean expressions can be used for conditions"
-        colonSymbol *> indentSome (return . ConditionalBlock conditionalExpr) statement
+        colonSymbol *> indentSome (return . ConditionalBlock conditionalStart conditionalExpr conditionalEnd) statement
       indentedElse = elseSymbol *> indentSome return statement
 
 printParser :: Parser Statement

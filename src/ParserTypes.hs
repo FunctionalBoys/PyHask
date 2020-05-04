@@ -267,7 +267,9 @@ data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,
                          forStatements      :: NonEmpty Statement
                         } deriving (Eq,Show)
 
-data ConditionalBlock = ConditionalBlock { conditionalExpr :: Expr,
+data ConditionalBlock = ConditionalBlock { conditionalStart :: Int,
+                                           conditionalExpr :: Expr,
+                                           conditionalEnd :: Int,
                                            conditionalStatements :: NonEmpty Statement
                                          } deriving (Eq,Show)
 

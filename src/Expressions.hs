@@ -3,9 +3,9 @@ module Expressions (exprCheck) where
 import           AnalysisUtils
 import qualified Data.Map      as M
 import qualified Data.Text     as T
+import           GenUtils
 import           ParserTypes
 import           Utils
-import GenUtils
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck var@(Var ident) = do
@@ -88,9 +88,9 @@ isComparisonOperator :: Op -> Bool
 isComparisonOperator op = op `elem` comparisonOperators
 
 isNumericType :: SimpleType -> Bool
-isNumericType IntType = True
+isNumericType IntType   = True
 isNumericType FloatType = True
-isNumericType _ = False
+isNumericType _         = False
 
 quadFloatConvert :: SimpleExpr -> Address -> Parser Expr
 quadFloatConvert sExpr address = do

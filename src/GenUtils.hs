@@ -48,10 +48,10 @@ memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection )
   | otherwise = Nothing
 
 getNextAddress :: SimpleType -> MemoryBlock -> Maybe Address
-getNextAddress IntType = memoryBlockToMaybeAddress <<< memoryBlockInt
+getNextAddress IntType   = memoryBlockToMaybeAddress <<< memoryBlockInt
 getNextAddress FloatType = memoryBlockToMaybeAddress <<< memoryBlockFloat
-getNextAddress CharType = memoryBlockToMaybeAddress <<< memoryBlockChar
-getNextAddress BoolType = memoryBlockToMaybeAddress <<< memoryBlockBool
+getNextAddress CharType  = memoryBlockToMaybeAddress <<< memoryBlockChar
+getNextAddress BoolType  = memoryBlockToMaybeAddress <<< memoryBlockBool
 
 getNextVariableAddress :: SimpleType -> ParserState -> Maybe Address
 getNextVariableAddress sType pState = getNextAddress sType (currentMemoryBlock pState)

@@ -37,8 +37,8 @@ data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Tex
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
-data Variable = Variable {  variableType :: ComposedType,
-                            variableInit :: Bool,
+data Variable = Variable {  variableType    :: ComposedType,
+                            variableInit    :: Bool,
                             variableAddress :: Address
                          } deriving (Eq,Show)
 data Quad =
@@ -48,7 +48,7 @@ data Quad =
   | QuadNeg Address Address
   | QuadRead Address
   | QuadPrint Address
-  | QuadAssign Address Address 
+  | QuadAssign Address Address
   | QuadFPlaceholder Address
   | QuadF Address Int
   | QuadTPlaceholder Address
@@ -254,9 +254,9 @@ data SimpleExpr =
   | FloatConversion SimpleExpr
   | ArrayAccess Text Expr deriving (Eq, Show)
 
-data WhileLoop = WhileLoop { whileCondition  :: Expr,
+data WhileLoop = WhileLoop { whileCondition    :: Expr,
                              whileConditionEnd :: Int,
-                             whileStatements :: NonEmpty Statement
+                             whileStatements   :: NonEmpty Statement
                            } deriving (Eq,Show)
 
 data ForLoop = ForLoop { forDeclaration     :: NonEmpty Text,

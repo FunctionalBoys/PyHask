@@ -13,16 +13,16 @@ import           Data.Default.Class
 import qualified Data.List.NonEmpty                 as N
 import qualified Data.Map                           as M
 import           Data.Maybe
+import           Data.Sequence                      (Seq)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Expressions
+import           GenUtils
 import           Lexer
 import           ParserTypes
 import           Text.Megaparsec                    hiding (sepBy1)
 import           Text.Megaparsec.Char
 import           Utils
-import GenUtils
-import Data.Sequence (Seq)
 
 mainParser :: Parser MainProgram
 mainParser = do
@@ -93,7 +93,7 @@ whileParser = do
   whileLoop@WhileLoop{whileConditionEnd = end} <- scoped ScopeTypeWhile $ indentBlock whileBlock
   registerQuadruple $ QuadGOTO cont
   cont2 <- gets quadruplesCounter
-  safeQuadrupleUpdate (fillGOTOF cont2) end 
+  safeQuadrupleUpdate (fillGOTOF cont2) end
   return whileLoop
   where
     whileBlock = do
@@ -106,9 +106,16 @@ whileParser = do
 
 ifParser :: Parser Conditional
 ifParser = do
-  ifBlock <- scoped ScopeTypeConditional $ indentBlock $ indentedCondition ifSymbol
-  elifBlocks <- many $ scoped ScopeTypeConditional $ indentBlock $ indentedCondition elifSymbol
+  ifBlock <- scoped ScopeTypeConditional $ (indentBlock $ indentedCondition ifSymbol) <* registerQuadruple QuadGOTOPlaceholder
+  elifBlocks <- many $ scoped ScopeTypeConditional $ (indentBlock $ indentedCondition elifSymbol) <* registerQuadruple QuadGOTOPlaceholder
+  let ends = conditionalEnd <$> ifBlock : elifBlocks
+  elseStart <- gets quadruplesCounter
+  let starts = (conditionalStart <$> elifBlocks) ++ [elseStart]
+  let zipped = zip ends starts
+  forM_ zipped updateEnds
   elseBlock <- optional $ scoped ScopeTypeConditional $ indentBlock indentedElse
+  end <- gets quadruplesCounter
+  forM_ (subtract 1 <$> starts) (updateInconditionals end)
   return Conditional{..}
     where
       indentedCondition firstSymbol = do
@@ -116,10 +123,12 @@ ifParser = do
         conditionalStart <- gets quadruplesCounter
         conditionalExpr@Expr{memoryAddess = address} <- expr
         conditionalEnd <- gets quadruplesCounter
-        registerQuadruple $ QuadGOTOFPlaceholder address
+        registerQuadruple $ QuadFPlaceholder address
         guardFail (expressionType conditionalExpr == Simple BoolType) "Only boolean expressions can be used for conditions"
         colonSymbol *> indentSome (return . ConditionalBlock conditionalStart conditionalExpr conditionalEnd) statement
       indentedElse = elseSymbol *> indentSome return statement
+      updateEnds (end, start) = safeQuadrupleUpdate (fillGOTOF start) end
+      updateInconditionals end = safeQuadrupleUpdate (fillGOTO end)
 
 printParser :: Parser Statement
 printParser = do
@@ -174,7 +183,7 @@ returnParser = do
   return (ReturnStatement mExpr)
   where
     check (Expr _ (Simple sType) _) = Just (ValueReturn sType)
-    check _                       = Nothing
+    check _                         = Nothing
 
 declaration :: Parser Declaration
 declaration = letSymbol *> do
@@ -313,11 +322,12 @@ expr = simpleExpr >>= exprCheck
 simpleAssignment :: Parser SimpleAssignment
 simpleAssignment = do
   i <- identifier
-  variable <- findVariable i
+  variable@Variable{variableAddress=vAddress} <- findVariable i
   equalSymbol
-  e <- expr
+  e@Expr{memoryAddess=eAddress} <- expr
   guardFail (expressionType e == variableType variable) "The types of the expression and assignment doesn't match."
   modify $ setVariableAsInitialized i
+  registerQuadruple $ QuadAssign eAddress vAddress
   return (SimpleAssignment i e)
 
 arrayAssignmet :: Parser ArrayAssignment

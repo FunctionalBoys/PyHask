@@ -1,11 +1,12 @@
 module Main where
 
 import           Control.Monad
-import           Data.Sequence       (Seq)
-import qualified Data.Text.IO        as T
+import           Control.Monad.State.Lazy
+import           Data.Sequence            (Seq)
+import qualified Data.Text.IO             as T
 import           Options.Applicative
 import           Parser
-import           ParserTypes         (MainProgram, Quad)
+import           ParserTypes              (MainProgram, Quad)
 
 newtype Filename = Filename { name :: String }
 
@@ -18,12 +19,19 @@ opts = info (fileArg <**> helper)
    <> progDesc "Parse a PyHask file"
    <> header "PyHask parser")
 
+indexedPrint :: (Show a) => a -> StateT Int IO ()
+indexedPrint a = do
+  index <- get
+  liftIO $ putStr $ show index ++ ". "
+  liftIO $ print a
+  put (index + 1)
+
 printResult :: (MainProgram, Seq Quad) -> IO ()
 printResult (mainProgram, quads) = do
   putStrLn "Printing syntax tree"
   print mainProgram
   putStrLn "Printing quads"
-  forM_ quads print
+  evalStateT (forM_ quads indexedPrint) 0
 
 main :: IO ()
 main = do

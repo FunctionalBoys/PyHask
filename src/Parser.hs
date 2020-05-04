@@ -99,6 +99,7 @@ whileParser = do
     whileBlock = do
       whileSymbol
       whileCondition@Expr{memoryAddess = address} <- expr
+      guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions allowed as conditions"
       whileConditionEnd <- gets quadruplesCounter
       registerQuadruple $ QuadFPlaceholder address
       guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions can be used in while condition"

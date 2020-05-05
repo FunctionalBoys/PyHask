@@ -237,7 +237,7 @@ newtype Address = Address Int deriving (Eq,Show)
 
 data Expr = Expr { innerExpression :: SimpleExpr,
                    expressionType  :: ComposedType,
-                   memoryAddess    :: Address
+                   memoryAddress   :: Address
                  } deriving (Eq,Show)
 
 data SimpleExpr =

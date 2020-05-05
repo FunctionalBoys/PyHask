@@ -3,14 +3,14 @@
 module Lexer where
 
 import           Control.Monad              (void)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as N
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           ParserTypes
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as N
 
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break",

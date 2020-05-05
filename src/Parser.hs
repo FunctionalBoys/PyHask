@@ -98,7 +98,7 @@ whileParser = do
   where
     whileBlock = do
       whileSymbol
-      whileCondition@Expr{memoryAddess = address} <- expr
+      whileCondition@Expr{memoryAddress = address} <- expr
       guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions allowed as conditions"
       whileConditionEnd <- gets quadruplesCounter
       registerQuadruple $ QuadFPlaceholder address
@@ -122,7 +122,7 @@ ifParser = do
       indentedCondition firstSymbol = do
         _ <- firstSymbol
         conditionalStart <- gets quadruplesCounter
-        conditionalExpr@Expr{memoryAddess = address} <- expr
+        conditionalExpr@Expr{memoryAddress = address} <- expr
         conditionalEnd <- gets quadruplesCounter
         registerQuadruple $ QuadFPlaceholder address
         guardFail (expressionType conditionalExpr == Simple BoolType) "Only boolean expressions can be used for conditions"
@@ -325,7 +325,7 @@ simpleAssignment = do
   i <- identifier
   variable@Variable{variableAddress=vAddress} <- findVariable i
   equalSymbol
-  e@Expr{memoryAddess=eAddress} <- expr
+  e@Expr{memoryAddress=eAddress} <- expr
   guardFail (expressionType e == variableType variable) "The types of the expression and assignment doesn't match."
   modify $ setVariableAsInitialized i
   registerQuadruple $ QuadAssign eAddress vAddress
@@ -373,7 +373,7 @@ forParser = do
       guardFail (expressionType forDeclarationExpr == Simple forDeclarationType) "Expression type must be the same as the declaration type"
       colonSymbol
       forConditionStart <- gets quadruplesCounter
-      forCondition@Expr{memoryAddess=conditionAddress} <- expr
+      forCondition@Expr{memoryAddress=conditionAddress} <- expr
       guardFail (expressionType forCondition == Simple BoolType) "Only boolean expressions can be used in for condition"
       forConditionEnd <- gets quadruplesCounter
       registerQuadruple $ QuadFPlaceholder conditionAddress

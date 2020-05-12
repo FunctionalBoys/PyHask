@@ -56,6 +56,18 @@ getNextAddress BoolType  = memoryBlockToMaybeAddress <<< memoryBlockBool
 getScopeTempMemoryBlock :: ParserState -> MemoryBlock
 getScopeTempMemoryBlock ParserState{scopes=Scope{scopeTempMemory=memory} N.:| _} = memory
 
+updateTypeMemory :: TypeMemoryBlock -> TypeMemoryBlock -> Either String TypeMemoryBlock
+updateTypeMemory (TypeMemoryBlock lower upper current) (TypeMemoryBlock newLower newUpper newCurrent)
+  | lower == newLower && upper == newUpper = Right (TypeMemoryBlock lower upper (max current newCurrent))
+  | otherwise = Left "Type memory blocks do not share size"
+
+updateMemoryBlock :: MemoryBlock -> MemoryBlock -> Either String MemoryBlock
+updateMemoryBlock (MemoryBlock mbi mbf mbc mbb) (MemoryBlock nmbi nmbf nmbc nmbb) = MemoryBlock
+  <$> updateTypeMemory mbi nmbi
+  <*> updateTypeMemory mbf nmbf
+  <*> updateTypeMemory mbc nmbc
+  <*> updateTypeMemory mbb nmbb
+
 memoryBlockIncrease :: TypeMemoryBlock -> TypeMemoryBlock
 memoryBlockIncrease (TypeMemoryBlock mLBound mUBound cDirection) = TypeMemoryBlock mLBound mUBound (cDirection + 1)
 

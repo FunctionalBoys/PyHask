@@ -81,7 +81,9 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
       arrowSymbol
       functionReturnType <- returnType
       colonSymbol
-      let fDefinition = FunctionDefinition functionArguments functionReturnType
+      varMemory <- gets currentMemoryBlock
+      tempMemory <- gets currentTempBlock
+      let fDefinition = FunctionDefinition functionArguments functionReturnType varMemory tempMemory
       maybeClass <- maybeInsideClass
       maybe (modify $ insertFunction functionName fDefinition) (f fDefinition functionName) maybeClass
       indentSome (return . Function functionName functionArguments functionReturnType) statement

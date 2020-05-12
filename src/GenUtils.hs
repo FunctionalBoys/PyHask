@@ -53,8 +53,8 @@ getNextAddress FloatType = memoryBlockToMaybeAddress <<< memoryBlockFloat
 getNextAddress CharType  = memoryBlockToMaybeAddress <<< memoryBlockChar
 getNextAddress BoolType  = memoryBlockToMaybeAddress <<< memoryBlockBool
 
-getNextVariableAddress :: SimpleType -> ParserState -> Maybe Address
-getNextVariableAddress sType pState = getNextAddress sType (currentMemoryBlock pState)
+getScopeTempMemoryBlock :: ParserState -> MemoryBlock
+getScopeTempMemoryBlock ParserState{scopes=Scope{scopeTempMemory=memory} N.:| _} = memory
 
 memoryBlockIncrease :: TypeMemoryBlock -> TypeMemoryBlock
 memoryBlockIncrease (TypeMemoryBlock mLBound mUBound cDirection) = TypeMemoryBlock mLBound mUBound (cDirection + 1)

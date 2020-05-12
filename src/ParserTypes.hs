@@ -93,7 +93,9 @@ data Scope = Scope { scopeType            :: ScopeType,
                    } deriving (Eq,Show)
 
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
-                                               functionDefinitionReturnType :: ReturnType
+                                               functionDefinitionReturnType :: ReturnType,
+                                               functionDefinitionVarMB     :: MemoryBlock,
+                                               functionDefinitionTempMB    :: MemoryBlock
                                              } deriving (Eq,Show)
 
 

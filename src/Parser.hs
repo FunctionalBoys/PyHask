@@ -151,11 +151,13 @@ readParser = do
 functionCallParser :: Parser FunctionCall
 functionCallParser = do
   functionCallName <- identifier
+  registerQuadruple $ QuadEra functionCallName
   fArgumentsType <- fmap (Simple . argumentType) . functionDefinitionArguments <$> findFunction functionCallName
   functionCallArguments <- parens $ sepBy expr commaSymbol
-  if fArgumentsType == fmap expressionType functionCallArguments
-    then return FunctionCall{..}
-    else fail "Argument types do not match"
+  writeParams functionCallArguments
+  guardFail (fArgumentsType == fmap expressionType functionCallArguments) "Argument types do not match for function call"
+  registerQuadruple $ QuadGOSUB functionCallName
+  return FunctionCall{..}
 
 methodCallParser :: Parser MethodCall
 methodCallParser = do
@@ -180,6 +182,8 @@ returnParser = do
   fName <- findScopeFunctionName
   rType <- functionDefinitionReturnType <$> findFunction fName
   guardFail (rExpr == rType) "Return type does not match function type"
+  maybe (return ()) (\(Expr _ _ address) -> registerQuadruple $ QuadReturn address) mExpr
+  registerQuadruple QuadEndFunc
   return (ReturnStatement mExpr)
   where
     check (Expr _ (Simple sType) _) = Just (ValueReturn sType)

@@ -153,3 +153,12 @@ getLiteralAddress literal = do
       address <- nextLiteralAddress lType
       modify $ insertLiteralAddress literal address
       return address
+
+writeParams' :: Expr -> StateT Int Parser ()
+writeParams' (Expr _ _ address) = do
+  index <- get
+  lift $ registerQuadruple $ QuadFuncParam address index
+  put (index + 1)
+
+writeParams :: (Foldable t) => t Expr -> Parser ()
+writeParams params = evalStateT (forM_ params writeParams') 0

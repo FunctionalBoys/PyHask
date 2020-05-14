@@ -102,7 +102,6 @@ whileParser = do
       guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions allowed as conditions"
       whileConditionEnd <- gets quadruplesCounter
       registerQuadruple $ QuadFPlaceholder address
-      guardFail (expressionType whileCondition == Simple BoolType) "Only boolean expressions can be used in while condition"
       colonSymbol *> indentSome (return . WhileLoop whileCondition whileConditionEnd) statement
 
 ifParser :: Parser Conditional

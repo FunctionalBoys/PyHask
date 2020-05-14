@@ -76,7 +76,6 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
     functionBlock = do
       defSymbol
       functionName <- newIdentifier
-      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction functionName) ids vars mVars mTemp)
       functionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionReturnType <- returnType
@@ -84,6 +83,7 @@ functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
       varMemory <- gets currentMemoryBlock
       tempMemory <- gets currentTempBlock
       let fDefinition = FunctionDefinition functionArguments functionReturnType varMemory tempMemory
+      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction functionName) ids vars mVars mTemp)
       maybeClass <- maybeInsideClass
       maybe (modify $ insertFunction functionName fDefinition) (f fDefinition functionName) maybeClass
       indentSome (return . Function functionName functionArguments functionReturnType) statement

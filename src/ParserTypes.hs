@@ -55,6 +55,11 @@ data Quad =
   | QuadT Address Int
   | QuadGOTOPlaceholder
   | QuadGOTO Int
+  | QuadGOSUB Text
+  | QuadEra Text
+  | QuadFuncParam Address Int
+  | QuadEndFunc
+  | QuadReturn Address
   | QuadNoOP
   | QuadEnd
   deriving (Eq,Show)

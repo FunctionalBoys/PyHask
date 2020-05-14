@@ -91,6 +91,14 @@ findScopeFunctionName = do
     f (ScopeTypeFunction fName) = Just fName
     f _                         = Nothing
 
+insideFunction :: Parser Bool
+insideFunction = do
+  sTypes <- fmap scopeType <$> gets scopes
+  return (any f sTypes)
+  where
+    f (ScopeTypeFunction _) = True
+    f _                     = False
+
 maybeClassName :: ScopeType -> Maybe Text
 maybeClassName (ScopeTypeClass name) = Just name
 maybeClassName _                     = Nothing

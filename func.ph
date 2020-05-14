@@ -1,8 +1,8 @@
-def f(i: int) -> void:
+def f(i: int) -> int:
   let j : int := 0
   let fl : float := 1.0
   let k : int := i * 2 - j
-  return
+  return k
 
 main:
-  print(1)
+  f(1+2)

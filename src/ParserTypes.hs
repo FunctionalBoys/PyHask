@@ -100,7 +100,8 @@ data Scope = Scope { scopeType            :: ScopeType,
 data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [FunctionArgument],
                                                functionDefinitionReturnType :: ReturnType,
                                                functionDefinitionVarMB     :: MemoryBlock,
-                                               functionDefinitionTempMB    :: MemoryBlock
+                                               functionDefinitionTempMB    :: MemoryBlock,
+                                               functionDefinitionIP        :: Int
                                              } deriving (Eq,Show)
 
 

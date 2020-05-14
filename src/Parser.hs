@@ -69,22 +69,23 @@ functionArgument = do
   return FunctionArgument{..}
 
 functionParser :: Parser Function
-functionParser = scoped ScopePlaceholder $ indentBlock functionBlock
+functionParser = scoped ScopePlaceholder $ (indentBlock functionBlock) <* registerQuadruple QuadEndFunc
   where
     functionBlock = do
       defSymbol
       functionName <- newIdentifier
-      functionArguments <- parens $ sepBy functionArgument commaSymbol
+      functionDefinitionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
-      functionReturnType <- returnType
+      functionDefinitionReturnType <- returnType
       colonSymbol
-      varMemory <- gets currentMemoryBlock
-      tempMemory <- gets currentTempBlock
-      let fDefinition = FunctionDefinition functionArguments functionReturnType varMemory tempMemory
+      functionDefinitionVarMB <- gets currentMemoryBlock
+      functionDefinitionTempMB <- gets currentTempBlock
+      functionDefinitionIP <- gets quadruplesCounter
+      let fDefinition = FunctionDefinition{..}
       modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction functionName) ids vars mVars mTemp)
       maybeClass <- maybeInsideClass
       maybe (modify $ insertFunction functionName fDefinition) (f fDefinition functionName) maybeClass
-      indentSome (return . Function functionName functionArguments functionReturnType) statement
+      indentSome (return . Function functionName functionDefinitionArguments functionDefinitionReturnType) statement
     f fDefinition fName clsName = modify $ insertMethodToClass clsName fName fDefinition
 
 whileParser :: Parser WhileLoop

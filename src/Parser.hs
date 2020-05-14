@@ -13,7 +13,6 @@ import           Data.Default.Class
 import qualified Data.List.NonEmpty                 as N
 import qualified Data.Map                           as M
 import           Data.Maybe
-import           Data.Sequence                      (Seq)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Expressions
@@ -38,9 +37,8 @@ mainParser = do
 programParser :: Parser MainProgram
 programParser = between space eof mainParser
 
-parseProgram :: String -> Text -> Either String (MainProgram, Seq Quad)
-parseProgram filename input = bimap errorBundlePretty f $ runParser (runStateT programParser def) filename input
-  where f = second quadruplesSequence
+parseProgram :: String -> Text -> Either String (MainProgram, ParserState)
+parseProgram filename input = first errorBundlePretty $ runParser (runStateT programParser def) filename input
 
 newIdentifierCheck :: (Text -> ParserState -> ParserState) -> Parser Text
 newIdentifierCheck f = do

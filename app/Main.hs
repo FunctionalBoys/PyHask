@@ -2,11 +2,10 @@ module Main where
 
 import           Control.Monad
 import           Control.Monad.State.Lazy
-import           Data.Sequence            (Seq)
 import qualified Data.Text.IO             as T
 import           Options.Applicative
 import           Parser
-import           ParserTypes              (MainProgram, Quad)
+import           ParserTypes              hiding (Parser)
 
 newtype Filename = Filename { name :: String }
 
@@ -26,11 +25,14 @@ indexedPrint a = do
   liftIO $ print a
   put (index + 1)
 
-printResult :: (MainProgram, Seq Quad) -> IO ()
-printResult (mainProgram, quads) = do
+printResult :: (MainProgram, ParserState) -> IO ()
+printResult (mainProgram, pState) = do
   putStrLn "Printing syntax tree"
   print mainProgram
+  putStrLn "Printing function definitions"
+  print (functionDefinitions pState)
   putStrLn "Printing quads"
+  let quads = quadruplesSequence pState
   evalStateT (forM_ quads indexedPrint) 0
 
 main :: IO ()

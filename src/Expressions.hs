@@ -44,8 +44,11 @@ exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
 exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
   fDefinition <- findFunction fName
   returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
-  -- TODO: Check this when functions are an actual thing
-  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) returnType (Address (-1)))
+  sType <- getValueReturnSimple $ functionDefinitionReturnType fDefinition
+  (Variable _ _ address) <- findVariable fName
+  tempAddress <- nextTempAddress sType
+  registerQuadruple $ QuadAssign address tempAddress
+  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) returnType tempAddress)
 exprCheck (FloatConversion sExpr) = do
   (Expr _ eType eAddress) <- exprCheck sExpr
   guardFail (eType == Simple IntType) "Only int types can be converted to float"
@@ -82,7 +85,6 @@ isArithmeticOperator op = op `elem` arithmeticOperations
 
 isBooleanOperator :: Op -> Bool
 isBooleanOperator op = op `elem` booleanOperations
-
 
 isComparisonOperator :: Op -> Bool
 isComparisonOperator op = op `elem` comparisonOperators

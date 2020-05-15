@@ -77,6 +77,11 @@ functionParser = scoped ScopePlaceholder $ (indentBlock functionBlock) <* regist
       functionDefinitionArguments <- parens $ sepBy functionArgument commaSymbol
       arrowSymbol
       functionDefinitionReturnType <- returnType
+      case functionDefinitionReturnType of
+        ValueReturn sType -> do
+          address <- nextGlobalVarAddress sType
+          modify $ insertGlobalVariable (Variable (Simple sType) True address) functionName
+        _ -> return ()
       colonSymbol
       functionDefinitionVarMB <- gets currentMemoryBlock
       functionDefinitionTempMB <- gets currentTempBlock

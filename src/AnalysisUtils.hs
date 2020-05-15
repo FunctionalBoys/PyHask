@@ -19,6 +19,10 @@ getValueReturn :: ReturnType -> Parser ComposedType
 getValueReturn (ValueReturn sType) = return (Simple sType)
 getValueReturn _ = fail "Only functions that return values can be used in expression."
 
+getValueReturnSimple :: ReturnType -> Parser SimpleType
+getValueReturnSimple (ValueReturn sType) = return sType
+getValueReturnSimple _ = fail "Function has void as return"
+
 exprSimpleType :: Expr -> Parser Expr
 exprSimpleType sExpr@Expr{expressionType=Simple _} = return sExpr
 exprSimpleType _ = fail "Expected a simple type"

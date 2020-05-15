@@ -144,6 +144,12 @@ insertVariable v ident  = modifyScope f
   where
     f scope@Scope{scopeVariables=variables} = scope {scopeVariables=M.insert ident v variables}
 
+insertGlobalVariable :: Variable -> Text -> ParserState -> ParserState
+insertGlobalVariable var ident pState@ParserState{scopes = ss} = pState{scopes = f <$> ss}
+  where
+    f scope@Scope{scopeType=ScopeTypeGlobal,scopeVariables=vars} = scope{scopeVariables = M.insert ident var vars}
+    f scope = scope
+
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f pState@ParserState{functionDefinitions=fDefinitions} = pState{functionDefinitions=M.insert ident f fDefinitions}
 

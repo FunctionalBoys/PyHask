@@ -3,9 +3,9 @@ module GenUtils where
 import           AnalysisUtils
 import           Control.Category
 import           Control.Monad.State.Lazy
+import           Data.Foldable
 import qualified Data.HashMap.Strict      as H
 import qualified Data.List.NonEmpty       as N
-import           Data.Maybe
 import qualified Data.Sequence            as S
 import           ParserTypes
 import           Utils
@@ -97,30 +97,54 @@ updateCurrentMemoryBlock memoryBlock pState@ParserState{scopes=(currentScope@Sco
 updateCurrentTemp :: MemoryBlock -> ParserState -> ParserState
 updateCurrentTemp memoryBlock pState@ParserState{scopes=(currentScope@Scope{} N.:| restScopes)} = pState {scopes=currentScope{scopeTempMemory=memoryBlock} N.:| restScopes}
 
-nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> Maybe (FunctionDefinition -> MemoryBlock , MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> SimpleType -> Parser Address
-nextAddress fetch push sideEffects sType = do
-  mB <- gets fetch
-  (nMB, address) <- getNextTypeAddress sType mB
+nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> (FunctionDefinition -> MemoryBlock) -> ( MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> SimpleType -> Parser Address
+nextAddress fetch push memBlock memUpdate sType = do
+  (nMB, address) <- nextAddressNoFunc fetch push sType
   isInsideFunction <- insideFunction
-  when (isInsideFunction && isJust sideEffects) $ do
-      (memBlock, memUpdate) <- maybeFail "Tried to update function without giving how" sideEffects
+  when isInsideFunction $ do
       fName <- findScopeFunctionName
       functionDefinition <- findFunction fName
       let oldMemoryBlock = memBlock functionDefinition
       maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
       let newFDef = memUpdate maxMB functionDefinition
       modify $ insertFunction fName newFDef
-  address <$ (modify <<< push) nMB
+  return address
+
+nextAddressNoFunc :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> SimpleType -> Parser (MemoryBlock, Address)
+nextAddressNoFunc fetch push sType = do
+  mB <- gets fetch
+  (nMB, address) <- getNextTypeAddress sType mB
+  (nMB, address) <$ (modify <<< push) nMB
 
 nextVarAddress :: SimpleType -> Parser Address
-nextVarAddress = nextAddress currentMemoryBlock updateCurrentMemoryBlock $ Just (functionDefinitionVarMB, updateDef)
+nextVarAddress = nextAddress currentMemoryBlock updateCurrentMemoryBlock functionDefinitionVarMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionVarMB = mB}
 
 nextTempAddress :: SimpleType -> Parser Address
-nextTempAddress = nextAddress currentTempBlock updateCurrentTemp $ Just (functionDefinitionTempMB, updateDef)
+nextTempAddress = nextAddress currentTempBlock updateCurrentTemp functionDefinitionTempMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionTempMB = mB}
+
+updateGlobalScope :: Scope -> ParserState -> ParserState
+updateGlobalScope scope pState@ParserState{scopes = ss} = pState{scopes = f <$> ss}
+  where
+    f Scope{scopeType = ScopeTypeGlobal} = scope
+    f s                                  = s
+
+nextGlobalVarAddress :: SimpleType -> Parser Address
+nextGlobalVarAddress sType = do
+  ss <- gets scopes
+  let mGlobalScope = asum $ f <$> ss
+  globalScope <- maybeFail "Non existent global scope" mGlobalScope
+  let mB = scopeVariablesMemory globalScope
+  (nMB, address) <- getNextTypeAddress sType mB
+  let updatedGlobalScope = globalScope{scopeVariablesMemory = nMB}
+  modify $ updateGlobalScope updatedGlobalScope
+  return address
+  where
+    f scope@Scope{scopeType = ScopeTypeGlobal} = Just scope
+    f _                                        = Nothing
 
 lookupLiteral :: Literal -> ParserState -> Maybe Address
 lookupLiteral literal ParserState{literalBlock=LiteralBlock{literalAddressMap=lMap}} = H.lookup literal lMap
@@ -132,7 +156,7 @@ updateLiteralMemoryBlock :: MemoryBlock -> ParserState -> ParserState
 updateLiteralMemoryBlock memoryBlock pState@ParserState{literalBlock=lBlock@LiteralBlock{}} = pState{literalBlock=lBlock{literalMemoryBlock=memoryBlock}}
 
 nextLiteralAddress :: SimpleType -> Parser Address
-nextLiteralAddress = nextAddress getLiteralMemoryBlock updateLiteralMemoryBlock Nothing
+nextLiteralAddress sType = snd <$> nextAddressNoFunc getLiteralMemoryBlock updateLiteralMemoryBlock sType
 
 insertLiteralAddress :: Literal -> Address -> ParserState -> ParserState
 insertLiteralAddress literal address pState@ParserState{literalBlock=lBlock@LiteralBlock{literalAddressMap=lMap}} = pState{literalBlock=lBlock{literalAddressMap=H.insert literal address lMap}}

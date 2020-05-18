@@ -5,8 +5,8 @@ import           Control.Category
 import           Control.Monad.State.Lazy
 import           Data.Foldable
 import qualified Data.HashMap.Strict      as H
+import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as N
-import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Sequence            as S
 import           ParserTypes
 import           Utils
@@ -172,15 +172,15 @@ insertLiteralAddress :: Literal -> Address -> ParserState -> ParserState
 insertLiteralAddress literal address pState@ParserState{literalBlock=lBlock@LiteralBlock{literalAddressMap=lMap}} = pState{literalBlock=lBlock{literalAddressMap=H.insert literal address lMap}}
 
 literalType :: Literal -> SimpleType
-literalType (LiteralInt _)   = IntType
-literalType (LiteralFloat _) = FloatType
-literalType (LiteralChar _)  = CharType
+literalType (LiteralInt _)    = IntType
+literalType (LiteralFloat _)  = FloatType
+literalType (LiteralChar _)   = CharType
 literalType (LiteralString _) = CharType
-literalType (LiteralBool _)  = BoolType
+literalType (LiteralBool _)   = BoolType
 
 literalSize :: Literal -> Int
 literalSize (LiteralString s) = length s
-literalSize _ = 1
+literalSize _                 = 1
 
 getLiteralAddress :: Literal -> Parser Address
 getLiteralAddress literal = do

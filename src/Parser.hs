@@ -25,17 +25,14 @@ import           Utils
 
 mainParser :: Parser MainProgram
 mainParser = do
-  mainProgramDefinitions <- many $ nonIndented $ choice [ MainProgramFunction <$> functionParser <?> "function definition"
-                                                             , MainProgramDeclaration <$> declaration <?> "global variable"
+  mainProgramElements <- some $ nonIndented $ choice [ MainProgramFunction <$> functionParser <?> "function definition"
+                                                             , MainProgramStatement <$> statement <?> "program statement"
                                                              , MainProgramClass <$> classParser <?> "class definition"]
-  label "main block definition" $ nonIndented $ scoped ScopeTypeMain $ (indentBlock $ mainBlock mainProgramDefinitions) <* registerQuadruple QuadEnd
-  where
-    mainBlock mainProgramDefinitions = do
-      mainSymbol *> colonSymbol
-      indentSome (return . MainProgram mainProgramDefinitions) statement
+  registerQuadruple QuadEnd
+  return MainProgram{..}
 
 programParser :: Parser MainProgram
-programParser = between space eof mainParser
+programParser = between space (space *> eof) mainParser
 
 parseProgram :: String -> Text -> Either String (MainProgram, ParserState)
 parseProgram filename input = first errorBundlePretty $ runParser (runStateT programParser def) filename input

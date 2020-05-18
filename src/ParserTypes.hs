@@ -150,13 +150,12 @@ data ObjectAssignment = ObjectAssignment { objectAssignmentName   :: Text,
                                            objectAssignmentExpr   :: Expr
                                          } deriving (Eq,Show)
 
-data MainProgramDefinition =
+data MainProgramElement =
     MainProgramClass Class
   | MainProgramFunction Function
-  | MainProgramDeclaration Declaration deriving (Eq,Show)
+  | MainProgramStatement Statement deriving (Eq,Show)
 
-data MainProgram = MainProgram { mainProgramDefinitions :: [MainProgramDefinition],
-                                 mainStatements :: NonEmpty Statement
+newtype MainProgram = MainProgram { mainProgramElements :: NonEmpty MainProgramElement
                                } deriving (Eq,Show)
 
 data Statement =

@@ -71,7 +71,14 @@ functionArgument = do
   return FunctionArgument{..}
 
 functionParser :: Parser Function
-functionParser = scoped ScopePlaceholder $ (indentBlock functionBlock) <* registerQuadruple QuadEndFunc
+functionParser = do
+  ignoreFunction <- gets quadruplesCounter
+  registerQuadruple QuadGOTOPlaceholder
+  function <- scoped ScopePlaceholder $ indentBlock functionBlock
+  registerQuadruple QuadEndFunc
+  outsideFunction <- gets quadruplesCounter
+  safeQuadrupleUpdate (fillGOTO outsideFunction) ignoreFunction
+  return function
   where
     functionBlock = do
       defSymbol
@@ -481,7 +488,13 @@ checkIdentifierClass = do
   return ident
 
 classParser :: Parser Class
-classParser = scoped ScopePlaceholder $ indentBlock classBlock
+classParser = do
+  ignoreClass <- gets quadruplesCounter
+  registerQuadruple QuadGOTOPlaceholder
+  cls <- scoped ScopePlaceholder $ indentBlock classBlock
+  outsideClass <- gets quadruplesCounter
+  safeQuadrupleUpdate (fillGOTO outsideClass) ignoreClass
+  return cls
   where
     classBlock = do
       classSymbol

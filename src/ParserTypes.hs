@@ -73,7 +73,6 @@ data ScopeType =
   | ScopeTypeConditional
   | ScopeTypeWhile
   | ScopeTypeFunction Text
-  | ScopeTypeMain
   | ScopeTypeClass Text
   | ScopePlaceholder
   | ScopeConstructor

@@ -45,7 +45,7 @@ fillGOTO index QuadGOTOPlaceholder = Right $ QuadGOTO index
 fillGOTO _  quad = Left $ show quad ++ " is not goto placeholder"
 
 memoryBlockToMaybeAddress :: TypeMemoryBlock -> Maybe Address
-memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection )
+memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection)
   | cDirection <= mUBound = Just (Address cDirection)
   | otherwise = Nothing
 
@@ -70,20 +70,20 @@ updateMemoryBlock (MemoryBlock mbi mbf mbc mbb) (MemoryBlock nmbi nmbf nmbc nmbb
   <*> updateTypeMemory mbc nmbc
   <*> updateTypeMemory mbb nmbb
 
-memoryBlockIncrease :: TypeMemoryBlock -> TypeMemoryBlock
-memoryBlockIncrease (TypeMemoryBlock mLBound mUBound cDirection) = TypeMemoryBlock mLBound mUBound (cDirection + 1)
+memoryBlockIncrease :: Int -> TypeMemoryBlock -> TypeMemoryBlock
+memoryBlockIncrease increase (TypeMemoryBlock mLBound mUBound cDirection) = TypeMemoryBlock mLBound mUBound (cDirection + increase)
 
-increaseCurrentAddress :: SimpleType -> MemoryBlock -> MemoryBlock
-increaseCurrentAddress IntType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock (memoryBlockIncrease tMBI) tMF tMC tMB
-increaseCurrentAddress FloatType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI (memoryBlockIncrease tMF) tMC tMB
-increaseCurrentAddress CharType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF (memoryBlockIncrease tMC) tMB
-increaseCurrentAddress BoolType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF tMC (memoryBlockIncrease tMB)
+increaseCurrentAddress :: Int -> SimpleType -> MemoryBlock -> MemoryBlock
+increaseCurrentAddress increase IntType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock (memoryBlockIncrease increase tMBI) tMF tMC tMB
+increaseCurrentAddress increase FloatType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI (memoryBlockIncrease increase tMF) tMC tMB
+increaseCurrentAddress increase CharType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF (memoryBlockIncrease increase tMC) tMB
+increaseCurrentAddress increase BoolType (MemoryBlock tMBI tMF tMC tMB) = MemoryBlock tMBI tMF tMC (memoryBlockIncrease increase tMB)
 
-getNextTypeAddress :: SimpleType -> MemoryBlock -> Parser (MemoryBlock, Address)
-getNextTypeAddress sT mB = do
+getNextTypeAddress :: Int -> SimpleType -> MemoryBlock -> Parser (MemoryBlock, Address)
+getNextTypeAddress increase sT mB = do
   let mAddress = getNextAddress sT mB
   address <- maybeFail "Out of memory error" mAddress
-  return (increaseCurrentAddress sT mB, address)
+  return (increaseCurrentAddress increase sT mB, address)
 
 currentMemoryBlock :: ParserState -> MemoryBlock
 currentMemoryBlock ParserState{scopes=(Scope{scopeVariablesMemory=memoryBlock} N.:| _)} = memoryBlock
@@ -97,9 +97,9 @@ updateCurrentMemoryBlock memoryBlock pState@ParserState{scopes=(currentScope@Sco
 updateCurrentTemp :: MemoryBlock -> ParserState -> ParserState
 updateCurrentTemp memoryBlock pState@ParserState{scopes=(currentScope@Scope{} N.:| restScopes)} = pState {scopes=currentScope{scopeTempMemory=memoryBlock} N.:| restScopes}
 
-nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> (FunctionDefinition -> MemoryBlock) -> ( MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> SimpleType -> Parser Address
-nextAddress fetch push memBlock memUpdate sType = do
-  (nMB, address) <- nextAddressNoFunc fetch push sType
+nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> (FunctionDefinition -> MemoryBlock) -> ( MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> Int -> SimpleType -> Parser Address
+nextAddress fetch push memBlock memUpdate increase sType = do
+  (nMB, address) <- nextAddressNoFunc fetch push increase sType
   isInsideFunction <- insideFunction
   when isInsideFunction $ do
       fName <- findScopeFunctionName
@@ -110,21 +110,27 @@ nextAddress fetch push memBlock memUpdate sType = do
       modify $ insertFunction fName newFDef
   return address
 
-nextAddressNoFunc :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> SimpleType -> Parser (MemoryBlock, Address)
-nextAddressNoFunc fetch push sType = do
+nextAddressNoFunc :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> Int -> SimpleType -> Parser (MemoryBlock, Address)
+nextAddressNoFunc fetch push increase sType = do
   mB <- gets fetch
-  (nMB, address) <- getNextTypeAddress sType mB
+  (nMB, address) <- getNextTypeAddress increase sType mB
   (nMB, address) <$ (modify <<< push) nMB
 
-nextVarAddress :: SimpleType -> Parser Address
-nextVarAddress = nextAddress currentMemoryBlock updateCurrentMemoryBlock functionDefinitionVarMB updateDef
+nextVarAddressGeneral :: Int -> SimpleType -> Parser Address
+nextVarAddressGeneral = nextAddress currentMemoryBlock updateCurrentMemoryBlock functionDefinitionVarMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionVarMB = mB}
 
-nextTempAddress :: SimpleType -> Parser Address
-nextTempAddress = nextAddress currentTempBlock updateCurrentTemp functionDefinitionTempMB updateDef
+nextVarAddress :: SimpleType -> Parser Address
+nextVarAddress = nextVarAddressGeneral 1
+
+nextTempAddressGeneral :: Int -> SimpleType -> Parser Address
+nextTempAddressGeneral = nextAddress currentTempBlock updateCurrentTemp functionDefinitionTempMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionTempMB = mB}
+
+nextTempAddress :: SimpleType -> Parser Address
+nextTempAddress = nextTempAddressGeneral 1
 
 updateGlobalScope :: Scope -> ParserState -> ParserState
 updateGlobalScope scope pState@ParserState{scopes = ss} = pState{scopes = f <$> ss}
@@ -132,19 +138,22 @@ updateGlobalScope scope pState@ParserState{scopes = ss} = pState{scopes = f <$> 
     f Scope{scopeType = ScopeTypeGlobal} = scope
     f s                                  = s
 
-nextGlobalVarAddress :: SimpleType -> Parser Address
-nextGlobalVarAddress sType = do
+nextGlobalVarAddressGeneral :: Int -> SimpleType -> Parser Address
+nextGlobalVarAddressGeneral increase sType = do
   ss <- gets scopes
   let mGlobalScope = asum $ f <$> ss
   globalScope <- maybeFail "Non existent global scope" mGlobalScope
   let mB = scopeVariablesMemory globalScope
-  (nMB, address) <- getNextTypeAddress sType mB
+  (nMB, address) <- getNextTypeAddress increase sType mB
   let updatedGlobalScope = globalScope{scopeVariablesMemory = nMB}
   modify $ updateGlobalScope updatedGlobalScope
   return address
   where
     f scope@Scope{scopeType = ScopeTypeGlobal} = Just scope
     f _                                        = Nothing
+
+nextGlobalVarAddress :: SimpleType -> Parser Address
+nextGlobalVarAddress = nextGlobalVarAddressGeneral 1
 
 lookupLiteral :: Literal -> ParserState -> Maybe Address
 lookupLiteral literal ParserState{literalBlock=LiteralBlock{literalAddressMap=lMap}} = H.lookup literal lMap
@@ -155,8 +164,8 @@ getLiteralMemoryBlock ParserState{literalBlock=LiteralBlock{literalMemoryBlock=m
 updateLiteralMemoryBlock :: MemoryBlock -> ParserState -> ParserState
 updateLiteralMemoryBlock memoryBlock pState@ParserState{literalBlock=lBlock@LiteralBlock{}} = pState{literalBlock=lBlock{literalMemoryBlock=memoryBlock}}
 
-nextLiteralAddress :: SimpleType -> Parser Address
-nextLiteralAddress sType = snd <$> nextAddressNoFunc getLiteralMemoryBlock updateLiteralMemoryBlock sType
+nextLiteralAddress :: Int -> SimpleType -> Parser Address
+nextLiteralAddress increase sType = snd <$> nextAddressNoFunc getLiteralMemoryBlock updateLiteralMemoryBlock increase sType
 
 insertLiteralAddress :: Literal -> Address -> ParserState -> ParserState
 insertLiteralAddress literal address pState@ParserState{literalBlock=lBlock@LiteralBlock{literalAddressMap=lMap}} = pState{literalBlock=lBlock{literalAddressMap=H.insert literal address lMap}}
@@ -165,7 +174,12 @@ literalType :: Literal -> SimpleType
 literalType (LiteralInt _)   = IntType
 literalType (LiteralFloat _) = FloatType
 literalType (LiteralChar _)  = CharType
+literalType (LiteralString _) = CharType
 literalType (LiteralBool _)  = BoolType
+
+literalSize :: Literal -> Int
+literalSize (LiteralString s) = length s
+literalSize _ = 1
 
 getLiteralAddress :: Literal -> Parser Address
 getLiteralAddress literal = do
@@ -173,8 +187,9 @@ getLiteralAddress literal = do
   case mAddress of
     Just address -> return address
     Nothing -> do
+      let sz = literalSize literal
       let lType = literalType literal
-      address <- nextLiteralAddress lType
+      address <- nextLiteralAddress sz lType
       modify $ insertLiteralAddress literal address
       return address
 

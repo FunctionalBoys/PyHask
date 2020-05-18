@@ -27,6 +27,7 @@ data Literal =
     LiteralInt Int
   | LiteralFloat Double
   | LiteralChar Char
+  | LiteralString String
   | LiteralBool Bool deriving (Eq,Show,Generic)
 
 instance Hashable Literal where
@@ -118,7 +119,7 @@ newTypeMemoryBlock :: Int -> Int -> TypeMemoryBlock
 newTypeMemoryBlock i j = TypeMemoryBlock i j i
 
 globalVariables :: MemoryBlock
-globalVariables = MemoryBlock (newTypeMemoryBlock 0 1000) (newTypeMemoryBlock 1001 2000) (newTypeMemoryBlock 2001 3000) (newTypeMemoryBlock 3001 4000)
+globalVariables = MemoryBlock (newTypeMemoryBlock 1 1000) (newTypeMemoryBlock 1001 2000) (newTypeMemoryBlock 2001 3000) (newTypeMemoryBlock 3001 4000)
 
 globalTemp :: MemoryBlock
 globalTemp = MemoryBlock (newTypeMemoryBlock 4001 6000) (newTypeMemoryBlock 6001 8000) (newTypeMemoryBlock 8001 10000) (newTypeMemoryBlock 10001 12000)
@@ -260,7 +261,7 @@ data SimpleExpr =
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr
-  | StringLiteral String
+  | StringLiteral String Address
   | CharLiteral Char Address
   | Operate Op SimpleExpr SimpleExpr
   | FloatConversion SimpleExpr

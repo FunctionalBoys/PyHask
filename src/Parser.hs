@@ -209,7 +209,10 @@ declaration = letSymbol *> do
   case idType of
     ClassType _ -> fail "Use create statement for object declaration"
     Simple sType -> forM_  identifiers (addId sType rExpr)
-    _ -> forM_  identifiers (modify . insertVariable (createVariable idType rExpr (Address (-1)))) -- TODO: TODO :TODO :TODO
+    ArrayType sType sizes -> do
+      let arrSize = product sizes
+      arrAddress <- nextVarAddressGeneral arrSize sType
+      forM_  identifiers (modify . insertVariable (createVariable idType rExpr arrAddress))
   return (Declaration identifiers idType rExpr)
     where
       addId sType mExpr ident = do
@@ -281,7 +284,10 @@ exprMethodCall :: Parser SimpleExpr
 exprMethodCall = MethodCallExpr <$> methodCallParser
 
 exprString :: Parser SimpleExpr
-exprString = StringLiteral <$> stringLiteral
+exprString = do
+  literal <-  stringLiteral
+  address <- getLiteralAddress $ LiteralString literal
+  return (StringLiteral literal address)
 
 exprChar :: Parser SimpleExpr
 exprChar = do

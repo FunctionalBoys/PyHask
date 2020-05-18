@@ -19,8 +19,7 @@ exprCheck var@(Var ident) = do
 exprCheck sExpr@(IntLiteral _ a) = return (Expr sExpr (Simple IntType) a)
 exprCheck sExpr@(FloatLiteral _ a) = return (Expr sExpr (Simple FloatType) a)
 exprCheck sExpr@(BoolLiteral _ a) = return (Expr sExpr (Simple BoolType) a)
--- TODO: Check this when arrays are an actual thing
-exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (ArrayType CharType (length sLiteral N.:| [])) (Address (-1)))
+exprCheck sExpr@(StringLiteral sLiteral address) = return (Expr sExpr (ArrayType CharType (length sLiteral N.:| [])) address)
 exprCheck sExpr@(CharLiteral _ a) = return (Expr sExpr (Simple CharType) a)
 exprCheck (Not sExpr) = do
   (Expr cExpr cType address) <- exprCheck sExpr

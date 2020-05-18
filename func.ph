@@ -9,6 +9,5 @@ def f(i: int) -> int:
   let k : int := i * 2 - j
   return k
 
-main:
-  let i: int := f(1+2)
-  print(i)
+let i: int := f(1+2)
+print(i)

@@ -45,16 +45,16 @@ def g(i : int) -> int:
 def p(f: float) -> float:
   return 5.0
 
-main:
-  create a : Hola(5)
-  create m : MemberedClass(5+2,1.0+p(1.0))
-  m.f(1)
-  p(2+1.0)
-  let abc, perro : float := y * x
-  let result : float := (x + y * abc / perro) ** 2
-  print(result)
-  while x + y == 3:
-    print(1)
+let l : char[5]
+create a : Hola(5)
+create m : MemberedClass(5+2,1.0+p(1.0))
+m.f(1)
+p(2+1.0)
+let abc, perro : float := y * x
+let result : float := (x + y * abc / perro) ** 2
+print(result)
+while x + y == 3:
+  print(1)
   if 3 > 2:
     print(1)
   elif True:
@@ -63,5 +63,5 @@ main:
     print(3)
   else
     print(4)
-  for i: int := 0 : i < 10 : i := i + 1:
-    print(i)
+for i: int := 0 : i < 10 : i := i + 1:
+   print(i)

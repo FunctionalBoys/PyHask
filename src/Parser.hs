@@ -19,7 +19,7 @@ import           Expressions
 import           GenUtils
 import           Lexer
 import           ParserTypes
-import           Text.Megaparsec                    hiding (sepBy1)
+import           Text.Megaparsec                    hiding (sepBy1, some)
 import           Text.Megaparsec.Char
 import           Utils
 
@@ -54,7 +54,12 @@ simpleType :: Parser SimpleType
 simpleType = choice [intSymbol, boolSymbol, floatSymbol, charSymbol]
 
 composedType :: Parser ComposedType
-composedType = try (ArrayType <$> simpleType <*> brackets intLiteral) <|> Simple <$> simpleType <|> ClassType <$> identifier
+composedType = try (ArrayType <$> simpleType <*> some arrayDim) <|> Simple <$> simpleType <|> ClassType <$> identifier
+  where
+    arrayDim = do
+      dim <- brackets intLiteral
+      guardFail (dim > 0) "Array dimension cannot be smaller than 1"
+      return dim
 
 returnType :: Parser ReturnType
 returnType = voidSymbol <|> ValueReturn <$> simpleType
@@ -198,7 +203,7 @@ returnParser = do
 declaration :: Parser Declaration
 declaration = letSymbol *> do
   identifiers <- sepBy1 newIdentifier commaSymbol
-  idType <- colonSymbol *> composedType
+  idType <- colonSymbol *> composedType <?> "Variable type"
   rExpr <- optional $ equalSymbol *> expr
   guardFail (maybe True ((== idType) . expressionType) rExpr) "Expression must match type"
   case idType of
@@ -246,9 +251,10 @@ exprMemberAccess = MemberAccess <$> objectIdentifier <*> (dotSymbol *> identifie
 exprArrayAccess :: Parser SimpleExpr
 exprArrayAccess = do
   ident <- identifier
-  index <- brackets expr
-  guardFail (expressionType index == Simple IntType) "Array access must be an integral expression"
-  return (ArrayAccess ident index)
+  indices <- some $ brackets expr
+  let expressionTypes = expressionType <$> indices
+  guardFail (all (== Simple IntType) expressionTypes) "Array access must be an integral expression"
+  return (ArrayAccess ident indices)
 
 exprInt :: Parser SimpleExpr
 exprInt = do
@@ -344,12 +350,13 @@ arrayAssignmet :: Parser ArrayAssignment
 arrayAssignmet = do
   i <- identifier
   (aType, _) <- getArrayInfo i
-  a <- brackets expr
-  guardFail (expressionType a == Simple IntType) "Index must be of type int"
+  indices <- some $ brackets expr
+  let indicesType = expressionType <$> indices
+  guardFail (all (== Simple IntType) indicesType) "Indices must be of type int"
   equalSymbol
   e <- expr
   guardFail (expressionType e == Simple aType) "Expression must match array type"
-  return (ArrayAssignment i a e)
+  return (ArrayAssignment i indices e)
 
 objectAssignment :: Parser ObjectAssignment
 objectAssignment = do

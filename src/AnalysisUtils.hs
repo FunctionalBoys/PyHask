@@ -59,7 +59,7 @@ findVariable ident = do
   maps <- fmap scopeVariables <$> gets scopes
   maybeFail ("Variable " ++ T.unpack ident ++ " not found") $ asum $ fmap (M.lookup ident) maps
 
-getArrayInfoFromType :: ComposedType -> Parser (SimpleType, Int)
+getArrayInfoFromType :: ComposedType -> Parser (SimpleType, NonEmpty Int)
 getArrayInfoFromType (ArrayType sType sz) = return (sType, sz)
 getArrayInfoFromType _                    = fail "Type is not an array"
 
@@ -71,7 +71,7 @@ extractClassName :: ComposedType -> Parser Text
 extractClassName (ClassType clsName) = return clsName
 extractClassName _                   = fail "Type is not a class"
 
-getArrayInfo :: Text -> Parser (SimpleType, Int)
+getArrayInfo :: Text -> Parser (SimpleType, NonEmpty Int)
 getArrayInfo ident = (variableType <$> findVariable ident) >>= getArrayInfoFromType
 
 memberKey :: Text -> Text -> Text

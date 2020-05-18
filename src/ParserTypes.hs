@@ -33,7 +33,7 @@ instance Hashable Literal where
   hashWithSalt s x = genericHashWithSalt s x
   {-# INLINEABLE hashWithSalt #-}
 
-data ComposedType = Simple SimpleType | ArrayType SimpleType Int | ClassType Text deriving (Eq,Show)
+data ComposedType = Simple SimpleType | ArrayType SimpleType (NonEmpty Int) | ClassType Text deriving (Eq,Show)
 
 data ReturnType = ValueReturn SimpleType | VoidReturn deriving (Eq,Show)
 
@@ -60,6 +60,8 @@ data Quad =
   | QuadFuncParam Address Int
   | QuadEndFunc
   | QuadReturn Address
+  | QuadVerify Address Address Address
+  | QuadArrayAccess Address Address Address
   | QuadNoOP
   | QuadEnd
   deriving (Eq,Show)
@@ -137,9 +139,9 @@ data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr
                                          } deriving (Eq,Show)
 
-data ArrayAssignment = ArrayAssignment { arrayAssigmnentName  :: Text,
-                                         arrayAssignmentIndex :: Expr,
-                                         arrayAssignmentExpr  :: Expr
+data ArrayAssignment = ArrayAssignment { arrayAssigmnentName    :: Text,
+                                         arrayAssignmentIndices :: NonEmpty Expr,
+                                         arrayAssignmentExpr    :: Expr
                                        } deriving (Eq,Show)
 
 data ObjectAssignment = ObjectAssignment { objectAssignmentName   :: Text,
@@ -262,7 +264,7 @@ data SimpleExpr =
   | CharLiteral Char Address
   | Operate Op SimpleExpr SimpleExpr
   | FloatConversion SimpleExpr
-  | ArrayAccess Text Expr deriving (Eq, Show)
+  | ArrayAccess Text (NonEmpty Expr) deriving (Eq, Show)
 
 data WhileLoop = WhileLoop { whileCondition    :: Expr,
                              whileConditionEnd :: Int,

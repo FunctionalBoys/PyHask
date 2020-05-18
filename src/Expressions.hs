@@ -1,8 +1,12 @@
 module Expressions (exprCheck) where
 
 import           AnalysisUtils
-import qualified Data.Map      as M
-import qualified Data.Text     as T
+import           Control.Monad
+import           Control.Monad.State.Lazy
+import           Data.List.NonEmpty       (NonEmpty)
+import qualified Data.List.NonEmpty       as N
+import qualified Data.Map                 as M
+import qualified Data.Text                as T
 import           GenUtils
 import           ParserTypes
 import           Utils
@@ -16,7 +20,7 @@ exprCheck sExpr@(IntLiteral _ a) = return (Expr sExpr (Simple IntType) a)
 exprCheck sExpr@(FloatLiteral _ a) = return (Expr sExpr (Simple FloatType) a)
 exprCheck sExpr@(BoolLiteral _ a) = return (Expr sExpr (Simple BoolType) a)
 -- TODO: Check this when arrays are an actual thing
-exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (ArrayType CharType (length sLiteral)) (Address (-1)))
+exprCheck (StringLiteral sLiteral) = return (Expr (StringLiteral sLiteral) (ArrayType CharType (length sLiteral N.:| [])) (Address (-1)))
 exprCheck sExpr@(CharLiteral _ a) = return (Expr sExpr (Simple CharType) a)
 exprCheck (Not sExpr) = do
   (Expr cExpr cType address) <- exprCheck sExpr
@@ -31,16 +35,20 @@ exprCheck (Neg sExpr) = do
   nAddress <- nextTempAddress sType
   registerQuadruple $ QuadNeg address nAddress
   return (Expr (Neg cExpr) cType nAddress)
-exprCheck (ArrayAccess ident (Expr (IntLiteral integer a) (Simple IntType) a2)) = do
-  (aType,sz) <- getArrayInfo ident
-  guardFail (integer < sz) "Index out of bounds"
-  -- TODO: Check this when arrays are a thing
-  return (Expr (ArrayAccess ident (Expr (IntLiteral integer a) (Simple IntType) a2)) (Simple aType) (Address (-1)))
-exprCheck (ArrayAccess ident (Expr sExpr (Simple IntType) address)) = do
-  (aType,_) <- getArrayInfo ident
-  -- TODO: Check this when arrays are a thing
-  return (Expr (ArrayAccess ident (Expr sExpr (Simple IntType) address)) (Simple aType) (Address (-1)))
-exprCheck (ArrayAccess _ _) = fail "Array index must be of integral type"
+exprCheck (ArrayAccess ident indices) = do
+  (aType,boundaries) <- getArrayInfo ident
+  (Variable _ _ baseAddress) <- findVariable ident
+  guardFail (length boundaries == length indices) "Incorrect array dimensions"
+  tempAddress <- nextTempAddress aType
+  zero <- getLiteralAddress $ LiteralInt 0
+  boundaryAddresses <- mapM (getLiteralAddress . LiteralInt) (subtract 1 <$> boundaries)
+  let indicesAddress = memoryAddress <$> indices
+  let varAddressPair = N.zip indicesAddress boundaryAddresses
+  forM_ varAddressPair (writeVerification zero)
+  strideAddresses <- mapM (getLiteralAddress . LiteralInt) (arrayStrides boundaries)
+  totalOffset <- execStateT (forM_ (N.zip strideAddresses indicesAddress) writePlainIndex) zero
+  registerQuadruple $ QuadArrayAccess baseAddress totalOffset tempAddress
+  return (Expr (ArrayAccess ident indices) (Simple aType) tempAddress)
 exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
   fDefinition <- findFunction fName
   returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
@@ -70,6 +78,21 @@ exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2
   combineExpressions op expr1 expr2
+
+writeVerification :: Address -> (Address, Address) -> Parser ()
+writeVerification lowerbound (var,upperbound) = registerQuadruple $ QuadVerify var lowerbound upperbound
+
+writePlainIndex :: (Address, Address) -> StateT Address Parser ()
+writePlainIndex (stride,value) = do
+  accum <- get
+  multAddress <- lift $ nextTempAddress IntType
+  lift $ registerQuadruple $ QuadOp Times value stride multAddress
+  newAccum <- lift $ nextTempAddress IntType
+  lift $ registerQuadruple $ QuadOp Sum multAddress accum newAccum
+  put newAccum
+
+arrayStrides :: NonEmpty Int -> NonEmpty Int
+arrayStrides (_ N.:| xs) = N.fromList $ scanr (*) 1 xs
 
 arithmeticOperations :: [Op]
 arithmeticOperations = [Sum, Minus, Times, Div, Exp]

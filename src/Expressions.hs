@@ -1,9 +1,6 @@
 module Expressions (exprCheck) where
 
 import           AnalysisUtils
-import           Control.Monad
-import           Control.Monad.State.Lazy
-import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as N
 import qualified Data.Map                 as M
 import qualified Data.Text                as T
@@ -37,15 +34,8 @@ exprCheck (Neg sExpr) = do
 exprCheck (ArrayAccess ident indices) = do
   (aType,boundaries) <- getArrayInfo ident
   (Variable _ _ baseAddress) <- findVariable ident
-  guardFail (length boundaries == length indices) "Incorrect array dimensions"
   tempAddress <- nextTempAddress aType
-  zero <- getLiteralAddress $ LiteralInt 0
-  boundaryAddresses <- mapM (getLiteralAddress . LiteralInt) (subtract 1 <$> boundaries)
-  let indicesAddress = memoryAddress <$> indices
-  let varAddressPair = N.zip indicesAddress boundaryAddresses
-  forM_ varAddressPair (writeVerification zero)
-  strideAddresses <- mapM (getLiteralAddress . LiteralInt) (arrayStrides boundaries)
-  totalOffset <- execStateT (forM_ (N.zip strideAddresses indicesAddress) writePlainIndex) zero
+  totalOffset <- writeArrayAccess indices boundaries
   registerQuadruple $ QuadArrayAccess baseAddress totalOffset tempAddress
   return (Expr (ArrayAccess ident indices) (Simple aType) tempAddress)
 exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
@@ -77,21 +67,6 @@ exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2
   combineExpressions op expr1 expr2
-
-writeVerification :: Address -> (Address, Address) -> Parser ()
-writeVerification lowerbound (var,upperbound) = registerQuadruple $ QuadVerify var lowerbound upperbound
-
-writePlainIndex :: (Address, Address) -> StateT Address Parser ()
-writePlainIndex (stride,value) = do
-  accum <- get
-  multAddress <- lift $ nextTempAddress IntType
-  lift $ registerQuadruple $ QuadOp Times value stride multAddress
-  newAccum <- lift $ nextTempAddress IntType
-  lift $ registerQuadruple $ QuadOp Sum multAddress accum newAccum
-  put newAccum
-
-arrayStrides :: NonEmpty Int -> NonEmpty Int
-arrayStrides (_ N.:| xs) = N.fromList $ scanr (*) 1 xs
 
 arithmeticOperations :: [Op]
 arithmeticOperations = [Sum, Minus, Times, Div, Exp]

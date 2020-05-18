@@ -352,13 +352,16 @@ simpleAssignment = do
 arrayAssignmet :: Parser ArrayAssignment
 arrayAssignmet = do
   i <- identifier
-  (aType, _) <- getArrayInfo i
+  (aType, boundaries) <- getArrayInfo i
   indices <- some $ brackets expr
+  (Variable _ _ baseAddress) <- findVariable i
   let indicesType = expressionType <$> indices
   guardFail (all (== Simple IntType) indicesType) "Indices must be of type int"
   equalSymbol
-  e <- expr
+  e@Expr{memoryAddress=address} <- expr
   guardFail (expressionType e == Simple aType) "Expression must match array type"
+  offSet <- writeArrayAccess indices boundaries
+  registerQuadruple $ QuadArrayAssign baseAddress offSet address
   return (ArrayAssignment i indices e)
 
 objectAssignment :: Parser ObjectAssignment

@@ -63,6 +63,7 @@ data Quad =
   | QuadReturn Address
   | QuadVerify Address Address Address
   | QuadArrayAccess Address Address Address
+  | QuadArrayAssign Address Address Address
   | QuadNoOP
   | QuadEnd
   deriving (Eq,Show)

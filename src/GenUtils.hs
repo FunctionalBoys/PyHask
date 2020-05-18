@@ -6,6 +6,7 @@ import           Control.Monad.State.Lazy
 import           Data.Foldable
 import qualified Data.HashMap.Strict      as H
 import qualified Data.List.NonEmpty       as N
+import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Sequence            as S
 import           ParserTypes
 import           Utils
@@ -201,3 +202,29 @@ writeParams' (Expr _ _ address) = do
 
 writeParams :: (Foldable t) => t Expr -> Parser ()
 writeParams params = evalStateT (forM_ params writeParams') 0
+
+writeArrayAccess :: NonEmpty Expr -> NonEmpty Int -> Parser Address
+writeArrayAccess indices boundaries = do
+  guardFail (length indices == length boundaries) "Incorrect array dimensions"
+  zero <- getLiteralAddress $ LiteralInt 0
+  let indicesAddress = memoryAddress <$> indices
+  boundaryAddresses <- mapM (getLiteralAddress <<< LiteralInt) (subtract 1 <$> boundaries)
+  let varAddressPair = N.zip indicesAddress boundaryAddresses
+  forM_ varAddressPair (writeVerification zero)
+  strideAddresses <- mapM (getLiteralAddress <<< LiteralInt) (arrayStrides boundaries)
+  execStateT (forM_ (N.zip strideAddresses indicesAddress) writePlainIndex) zero
+
+writeVerification :: Address -> (Address, Address) -> Parser ()
+writeVerification lowerbound (var,upperbound) = registerQuadruple $ QuadVerify var lowerbound upperbound
+
+arrayStrides :: NonEmpty Int -> NonEmpty Int
+arrayStrides (_ N.:| xs) = N.fromList $ scanr (*) 1 xs
+
+writePlainIndex :: (Address, Address) -> StateT Address Parser ()
+writePlainIndex (stride,value) = do
+  accum <- get
+  multAddress <- lift $ nextTempAddress IntType
+  lift $ registerQuadruple $ QuadOp Times value stride multAddress
+  newAccum <- lift $ nextTempAddress IntType
+  lift $ registerQuadruple $ QuadOp Sum multAddress accum newAccum
+  put newAccum

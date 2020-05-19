@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f59d735f64abf9aa2b8d6452e2e39cdf064b2c64c7e987990be9f605b0070f39
+-- hash: 0c862f2f06d43bbc14757d131ab1859d4b9d6d9b8f8018c5982950ea90e7eef2
 
 name:           PyHask
 version:        0.1.0.0
@@ -34,6 +34,8 @@ library
       Parser
       ParserTypes
       Utils
+      VirtualMachine.VMExecution
+      VirtualMachine.VMTypes
   other-modules:
       Paths_PyHask
   hs-source-dirs:
@@ -50,6 +52,7 @@ library
     , parser-combinators
     , text
     , unordered-containers
+    , vector
   default-language: Haskell2010
 
 executable PyHask-exe
@@ -71,6 +74,7 @@ executable PyHask-exe
     , parser-combinators
     , text
     , unordered-containers
+    , vector
   default-language: Haskell2010
 
 test-suite PyHask-test
@@ -93,4 +97,5 @@ test-suite PyHask-test
     , parser-combinators
     , text
     , unordered-containers
+    , vector
   default-language: Haskell2010

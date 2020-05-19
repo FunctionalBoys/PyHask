@@ -24,6 +24,7 @@ dependencies:
 - megaparsec
 - text
 - mtl
+- vector
 - parser-combinators
 - optparse-applicative
 - containers

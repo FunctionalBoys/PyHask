@@ -1,7 +1,7 @@
 let b : int := 5
 let x : int := 2
 
-let a : int[5][2][8]
+let a,o : int[5][2][8]
 let c : int := 101
 print(a[1+1][1][5])
 print(c)

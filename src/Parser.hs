@@ -213,10 +213,7 @@ declaration = letSymbol *> do
   case idType of
     ClassType _ -> fail "Use create statement for object declaration"
     Simple sType -> forM_  identifiers (addId sType rExpr)
-    ArrayType sType sizes -> do
-      let arrSize = product sizes
-      arrAddress <- nextVarAddressGeneral arrSize sType
-      forM_  identifiers (modify . insertVariable (createVariable idType rExpr arrAddress))
+    ArrayType sType sizes -> forM_  identifiers (addArray sType sizes rExpr)
   return (Declaration identifiers idType rExpr)
     where
       addId sType mExpr ident = do
@@ -224,6 +221,11 @@ declaration = letSymbol *> do
         modify $ insertVariable (createVariable (Simple sType) mExpr address) ident
         maybe (return ()) (assign address) mExpr
       assign varAddress (Expr _ _ address) = registerQuadruple $ QuadAssign address varAddress
+      addArray sType sizes mExpr ident = do
+        let arrSize = product sizes
+        arrAddress <- nextVarAddressGeneral arrSize sType
+        modify $ insertVariable (createVariable (ArrayType sType sizes) mExpr arrAddress) ident
+        maybe (return ()) (assign arrAddress) mExpr
 
 statement :: Parser Statement
 statement = choice [ continueParser

@@ -32,7 +32,6 @@ def g(i : int) -> int:
   for j :int := 0 : True : j := j + 1:
     if False:
       i := 200
-      break
     else
       continue
   

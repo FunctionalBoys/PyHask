@@ -60,7 +60,6 @@ data Quad =
   | QuadEra Text
   | QuadFuncParam Address Int
   | QuadEndFunc
-  | QuadReturn Address
   | QuadVerify Address Address Address
   | QuadArrayAccess Address Address Address
   | QuadArrayAssign Address Address Address

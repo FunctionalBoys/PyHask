@@ -195,9 +195,12 @@ returnParser = do
   mExpr <- optional expr
   let rExpr = fromMaybe VoidReturn (mExpr >>= check)
   fName <- findScopeFunctionName
-  rType <- functionDefinitionReturnType <$> findFunction fName
+  fDefinition <- findFunction fName
+  let rType = functionDefinitionReturnType fDefinition
   guardFail (rExpr == rType) "Return type does not match function type"
-  maybe (return ()) (\(Expr _ _ address) -> registerQuadruple $ QuadReturn address) mExpr
+  maybe (return ()) (\(Expr _ _ address) -> do
+                        (Variable _ _ fAddress) <- findVariable fName
+                        registerQuadruple $ QuadAssign address fAddress) mExpr
   registerQuadruple QuadEndFunc
   return (ReturnStatement mExpr)
   where

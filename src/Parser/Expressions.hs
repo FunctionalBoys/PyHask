@@ -111,7 +111,7 @@ allocateAndGenerateOp op (Expr sExpr1 _ a1) (Expr sExpr2 _ a2) sType = do
 -- Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or
 combineExpressions :: Op -> Expr -> Expr -> Parser Expr
 combineExpressions op expr1@(Expr _ (Simple t1) _) expr2@(Expr _ (Simple t2) _)
-  | isArithmeticOperator op && t1 == t2 && isNumericType t1 = allocateAndGenerateOp op expr1 expr2 t1
+  | isArithmeticOperator op && t1 == t2 && isNumericType t1 = allocateAndGenerateOp op expr1 expr2 (if op == Exp then FloatType else t1)
   | isArithmeticOperator op && isNumericType t1 && isNumericType t2 = do
       fExpr1 <- convertToFloat expr1
       fExpr2 <- convertToFloat expr2

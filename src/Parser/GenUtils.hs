@@ -98,18 +98,31 @@ updateCurrentMemoryBlock memoryBlock pState@ParserState{scopes=(currentScope@Sco
 updateCurrentTemp :: MemoryBlock -> ParserState -> ParserState
 updateCurrentTemp memoryBlock pState@ParserState{scopes=(currentScope@Scope{} N.:| restScopes)} = pState {scopes=currentScope{scopeTempMemory=memoryBlock} N.:| restScopes}
 
-nextAddress :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> (FunctionDefinition -> MemoryBlock) -> ( MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> Int -> SimpleType -> Parser Address
-nextAddress fetch push memBlock memUpdate increase sType = do
+data DataType = VarData | TempData deriving (Eq,Show)
+
+nextAddress :: DataType -> (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> (FunctionDefinition -> MemoryBlock) -> ( MemoryBlock -> FunctionDefinition -> FunctionDefinition) -> Int -> SimpleType -> Parser Address
+nextAddress datatype fetch push memBlock memUpdate increase sType = do
   (nMB, address) <- nextAddressNoFunc fetch push increase sType
   isInsideFunction <- insideFunction
-  when isInsideFunction $ do
+  if isInsideFunction
+    then (do
       fName <- findScopeFunctionName
       functionDefinition <- findFunction fName
       let oldMemoryBlock = memBlock functionDefinition
       maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
       let newFDef = memUpdate maxMB functionDefinition
-      modify $ insertFunction fName newFDef
+      modify $ insertFunction fName newFDef)
+    else (do
+             oldMemoryBlock <- case datatype of
+               VarData  -> gets globalVariablesBlock
+               TempData -> gets globalTempBlock
+             maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
+             modify $ f maxMB)
   return address
+  where
+    f mBlock pState = case datatype of
+      VarData  -> pState{globalVariablesBlock = mBlock}
+      TempData -> pState{globalTempBlock = mBlock}
 
 nextAddressNoFunc :: (ParserState -> MemoryBlock) -> (MemoryBlock -> ParserState -> ParserState) -> Int -> SimpleType -> Parser (MemoryBlock, Address)
 nextAddressNoFunc fetch push increase sType = do
@@ -118,7 +131,7 @@ nextAddressNoFunc fetch push increase sType = do
   (nMB, address) <$ (modify <<< push) nMB
 
 nextVarAddressGeneral :: Int -> SimpleType -> Parser Address
-nextVarAddressGeneral = nextAddress currentMemoryBlock updateCurrentMemoryBlock functionDefinitionVarMB updateDef
+nextVarAddressGeneral = nextAddress VarData currentMemoryBlock updateCurrentMemoryBlock functionDefinitionVarMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionVarMB = mB}
 
@@ -126,7 +139,7 @@ nextVarAddress :: SimpleType -> Parser Address
 nextVarAddress = nextVarAddressGeneral 1
 
 nextTempAddressGeneral :: Int -> SimpleType -> Parser Address
-nextTempAddressGeneral = nextAddress currentTempBlock updateCurrentTemp functionDefinitionTempMB updateDef
+nextTempAddressGeneral = nextAddress TempData currentTempBlock updateCurrentTemp functionDefinitionTempMB updateDef
   where
     updateDef mB fDef = fDef{functionDefinitionTempMB = mB}
 
@@ -148,6 +161,9 @@ nextGlobalVarAddressGeneral increase sType = do
   (nMB, address) <- getNextTypeAddress increase sType mB
   let updatedGlobalScope = globalScope{scopeVariablesMemory = nMB}
   modify $ updateGlobalScope updatedGlobalScope
+  globalMem <- gets globalVariablesBlock
+  maxMB <- liftEither $  updateMemoryBlock globalMem nMB
+  modify (\pState -> pState{globalVariablesBlock = maxMB})
   return address
   where
     f scope@Scope{scopeType = ScopeTypeGlobal} = Just scope

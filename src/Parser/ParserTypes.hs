@@ -108,6 +108,8 @@ data FunctionDefinition = FunctionDefinition { functionDefinitionArguments  :: [
 
 
 data ParserState = ParserState { scopes               :: NonEmpty Scope,
+                                 globalVariablesBlock :: MemoryBlock,
+                                 globalTempBlock      :: MemoryBlock,
                                  functionDefinitions  :: M.Map Text FunctionDefinition,
                                  classDefinitions     :: M.Map Text ClassDefinition,
                                  quadruplesSequence   :: S.Seq Quad,
@@ -133,7 +135,7 @@ literalsBlock :: MemoryBlock
 literalsBlock = MemoryBlock (newTypeMemoryBlock 44001 46000) (newTypeMemoryBlock 46001 48000) (newTypeMemoryBlock 48001 50000) (newTypeMemoryBlock 50001 50002)
 
 instance Default ParserState where
-  def = ParserState (Scope ScopeTypeGlobal [] M.empty globalVariables globalTemp N.:| []) M.empty M.empty S.empty (LiteralBlock literalsBlock H.empty)
+  def = ParserState (Scope ScopeTypeGlobal [] M.empty globalVariables globalTemp N.:| []) globalVariables globalTemp M.empty M.empty S.empty (LiteralBlock literalsBlock H.empty)
 
 data SimpleAssignment = SimpleAssignment { assignmentName :: Text,
                                            assignmentExpr :: Expr

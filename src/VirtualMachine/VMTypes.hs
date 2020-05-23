@@ -8,10 +8,12 @@ import           Data.Vector              (Vector)
 type Address = Int
 type Pointer = Int
 type Operation = TypeWrapper -> TypeWrapper -> Maybe TypeWrapper
+type UnaryOperation = TypeWrapper -> Maybe TypeWrapper
 
 data Instruction =
         Assign Address Address
       | BinaryOperation Operation Address Address Address
+      | UnaryOperation UnaryOperation Address Address
       | GOTO Pointer
       | GOTOT Address Pointer
       | GOTOF Address Pointer

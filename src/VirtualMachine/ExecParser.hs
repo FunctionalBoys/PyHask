@@ -7,6 +7,7 @@ import           Text.Megaparsec.Char
 
 import qualified Text.Megaparsec.Char.Lexer as L
 import           VirtualMachine.VMTypes
+import GHC.Float
 
 type Parser = Parsec Void String
 
@@ -36,6 +37,82 @@ sumParser = f <$ symbol "Sum"
   where
     f (IntWrapper left) (IntWrapper right) = Just $ IntWrapper (left + right)
     f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left + right)
+    f _ _ = Nothing
+
+minusParser :: Parser Operation
+minusParser = f <$ symbol "Minus"
+  where
+    f (IntWrapper left) (IntWrapper right) = Just $ IntWrapper (left - right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left - right)
+    f _ _ = Nothing
+
+timesParser :: Parser Operation
+timesParser = f <$ symbol "Times"
+  where
+    f (IntWrapper left) (IntWrapper right) = Just $ IntWrapper (left * right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left * right)
+    f _ _ = Nothing
+
+divParser :: Parser Operation
+divParser = f <$ symbol "Div"
+  where
+    f (IntWrapper left) (IntWrapper right) = Just $ IntWrapper (left `div` right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left / right)
+    f _ _ = Nothing
+
+expParser :: Parser Operation
+expParser = f <$ symbol "Exp"
+  where
+    f (IntWrapper left) (IntWrapper right) = Just $ FloatWrapper (int2Double(left) ** int2Double(right))
+    f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left ** right)
+    f _ _ = Nothing
+
+eqParser :: Parser Operation
+eqParser = f <$ symbol "Eq"
+  where
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left == right)
+    f _ _ = Nothing
+
+neqParser :: Parser UnaryOperation
+neqParser = f <$ symbol "NEq"
+  where
+    f (BoolWrapper center) = Just $ BoolWrapper (not center)
+    f _ = Nothing
+
+ltParser :: Parser Operation
+ltParser = f <$ symbol "Lt"
+  where
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left < right)
+    f _ _ = Nothing
+
+gtParser :: Parser Operation
+gtParser = f <$ symbol "Gt"
+  where 
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left > right)
+    f _ _ = Nothing
+
+lteParser :: Parser Operation
+lteParser = f <$ symbol "Lte"
+  where 
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left <= right)
+    f _ _ = Nothing
+
+gteParser :: Parser Operation
+gteParser = f <$ symbol "Gte"
+  where 
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left >= right)
+    f _ _ = Nothing
+
+andParser :: Parser Operation
+andParser = f <$ symbol "And"
+  where 
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left && right)
+    f _ _ = Nothing
+
+orParser :: Parser Operation
+orParser = f <$ symbol "Or"
+  where 
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left || right)
     f _ _ = Nothing
 
 operationParser :: Parser Operation

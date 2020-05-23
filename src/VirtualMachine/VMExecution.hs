@@ -51,6 +51,11 @@ executeInstruction (BinaryOperation op left right destiny) = do
   let mValue = leftValue `op` rightValue
   value <- liftEither $ maybe (Left "Cannot operate on addresses") Right mValue
   setValue value destiny
+executeInstruction (UnaryOperation op center destiny) = do
+  centerValue <- getValueFromAddress center
+  let mValue = op centerValue
+  value <- liftEither $ maybe (Left "Cannot operate on addresses") Right mValue
+  setValue value destiny
 executeInstruction (GOTO index) = jump index
 executeInstruction (GOTOT address index) = do
   value <- getValueFromAddress address

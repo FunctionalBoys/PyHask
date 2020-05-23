@@ -73,11 +73,11 @@ eqParser = f <$ symbol "Eq"
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left == right)
     f _ _ = Nothing
 
-neqParser :: Parser UnaryOperation
+neqParser :: Parser Operation
 neqParser = f <$ symbol "NEq"
   where
-    f (BoolWrapper center) = Just $ BoolWrapper (not center)
-    f _ = Nothing
+    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left /= right)
+    f _ _ = Nothing
 
 ltParser :: Parser Operation
 ltParser = f <$ symbol "Lt"
@@ -114,6 +114,26 @@ orParser = f <$ symbol "Or"
   where 
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left || right)
     f _ _ = Nothing
+  
+notParser :: Parser UnaryOperation
+notParser = f <$ symbol "Not"
+  where 
+    f (BoolWrapper center) = Just $ BoolWrapper(not center)
+    f _ = Nothing
+
+negParser :: Parser UnaryOperation
+negParser = f <$ symbol "Neg"
+  where 
+    f (IntWrapper center) = Just $ IntWrapper(center * (-1))
+    f (FloatWrapper center) = Just $ FloatWrapper(center * (-1))
+    f _ = Nothing
+
+floatConvertionParser :: Parser UnaryOperation
+floatConvertionParser = f <$ symbol "FloatConvert"
+  where
+    f (IntWrapper center) = Just $ FloatWrapper(int2Double(center))
+    f (FloatWrapper center) = Just $ FloatWrapper(center)
+    f _ = Nothing
 
 operationParser :: Parser Operation
 operationParser = choice [sumParser]

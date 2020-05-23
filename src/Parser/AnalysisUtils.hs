@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnalysisUtils where
+module Parser.AnalysisUtils where
 
 import           Control.Monad.Combinators
 import           Control.Monad.State.Lazy
@@ -11,8 +11,8 @@ import qualified Data.Map.Strict           as M
 import           Data.Maybe
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
-import           ParserTypes
-import           Utils
+import           Parser.ParserTypes
+import           Parser.Utils
 
 
 getValueReturn :: ReturnType -> Parser ComposedType
@@ -21,7 +21,7 @@ getValueReturn _ = fail "Only functions that return values can be used in expres
 
 getValueReturnSimple :: ReturnType -> Parser SimpleType
 getValueReturnSimple (ValueReturn sType) = return sType
-getValueReturnSimple _ = fail "Function has void as return"
+getValueReturnSimple _                   = fail "Function has void as return"
 
 exprSimpleType :: Expr -> Parser Expr
 exprSimpleType sExpr@Expr{expressionType=Simple _} = return sExpr

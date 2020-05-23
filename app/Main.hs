@@ -4,8 +4,8 @@ import           Control.Monad
 import           Control.Monad.State.Lazy
 import qualified Data.Text.IO             as T
 import           Options.Applicative
-import           Parser
-import           ParserTypes              hiding (Parser)
+import           Parser.Parser
+import           Parser.ParserTypes       hiding (Parser)
 
 newtype Filename = Filename { name :: String }
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ParserTypes where
+module Parser.ParserTypes where
 
 import           Control.Monad.State.Lazy
 import           Data.Default.Class

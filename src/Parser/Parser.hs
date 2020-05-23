@@ -2,9 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Parser (parseProgram) where
+module Parser.Parser (parseProgram) where
 
-import           AnalysisUtils
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.Combinators.NonEmpty
 import           Control.Monad.State.Lazy
@@ -15,13 +14,14 @@ import qualified Data.Map                           as M
 import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
-import           Expressions
-import           GenUtils
-import           Lexer
-import           ParserTypes
+import           Parser.AnalysisUtils
+import           Parser.Expressions
+import           Parser.GenUtils
+import           Parser.Lexer
+import           Parser.ParserTypes
+import           Parser.Utils
 import           Text.Megaparsec                    hiding (sepBy1, some)
 import           Text.Megaparsec.Char
-import           Utils
 
 mainParser :: Parser MainProgram
 mainParser = do

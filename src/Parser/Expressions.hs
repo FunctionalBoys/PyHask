@@ -1,12 +1,12 @@
-module Expressions (exprCheck) where
+module Parser.Expressions (exprCheck) where
 
-import           AnalysisUtils
-import qualified Data.List.NonEmpty       as N
-import qualified Data.Map                 as M
-import qualified Data.Text                as T
-import           GenUtils
-import           ParserTypes
-import           Utils
+import qualified Data.List.NonEmpty   as N
+import qualified Data.Map             as M
+import qualified Data.Text            as T
+import           Parser.AnalysisUtils
+import           Parser.GenUtils
+import           Parser.ParserTypes
+import           Parser.Utils
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck var@(Var ident) = do

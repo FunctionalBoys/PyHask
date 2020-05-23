@@ -1,5 +1,6 @@
-module ExecutableCreator (checkPlaceholder) where
-import           ParserTypes
+module Parser.ExecutableCreator (checkPlaceholder) where
+
+import           Parser.ParserTypes
 
 checkPlaceholder :: Quad -> Either String String
 checkPlaceholder (QuadFloatConvert (Address t1) (Address t2)) = Right $ "FloatConvert, " ++ show t1 ++ ", null, " ++ show t2

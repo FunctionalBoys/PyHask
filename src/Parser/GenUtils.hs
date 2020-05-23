@@ -1,6 +1,5 @@
-module GenUtils where
+module Parser.GenUtils where
 
-import           AnalysisUtils
 import           Control.Category
 import           Control.Monad.State.Lazy
 import           Data.Foldable
@@ -8,8 +7,9 @@ import qualified Data.HashMap.Strict      as H
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as N
 import qualified Data.Sequence            as S
-import           ParserTypes
-import           Utils
+import           Parser.AnalysisUtils
+import           Parser.ParserTypes
+import           Parser.Utils
 
 quadruplesCounter :: ParserState -> Int
 quadruplesCounter ParserState{quadruplesSequence=quads} = S.length quads

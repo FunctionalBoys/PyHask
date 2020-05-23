@@ -1,4 +1,4 @@
-module Utils where
+module Parser.Utils where
 
 maybeFail :: (MonadFail m) => String -> Maybe a -> m a
 maybeFail e = maybe (fail e) return

@@ -3,14 +3,28 @@ module VirtualMachine.VMTypes where
 import           Control.Monad.Except     (ExceptT)
 import           Control.Monad.Reader     (ReaderT)
 import           Control.Monad.State.Lazy (StateT)
-import           Data.Default.Class
 import           Data.Vector              (Vector)
 
 type Address = Int
 type Pointer = Int
 type Operation = TypeWrapper -> TypeWrapper -> Maybe TypeWrapper
+
 data Instruction =
-    ProgramEnd deriving (Eq,Show)
+        Assign Address Address
+      | BinaryOperation Operation Address Address Address
+      | GOTO Pointer
+      | GOTOT Address Pointer
+      | GOTOF Address Pointer
+      | Verify Address Address Address
+      | ArrayAccess Address Address Address
+      | ArrayAssign Address Address Address
+      | ProgramEnd
+
+data MemoryBlock = MemoryBlock { charMemory  :: Vector Char,
+                                 intMemory   :: Vector Int,
+                                 floatMemory :: Vector Double,
+                                 boolMemory  :: Vector Bool
+                                } deriving (Eq,Show)
 
 data MachineType = IntType | BoolType | CharType | FloatType deriving (Eq,Show)
 

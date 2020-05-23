@@ -37,8 +37,48 @@ executionAction = do
   executeInstruction currentInstruction
   modify $ increaseInstructionPointer 1
 
+jump :: Pointer -> VirtualMachine ()
+jump index = modify (\mState -> mState{instructionPointer = index - 1})
+
 executeInstruction :: Instruction -> VirtualMachine ()
 executeInstruction ProgramEnd = throwError "Program end should be unreachable by execution loop"
+executeInstruction (Assign source destiny) = do
+  value <- getValueFromAddress source
+  setValue value destiny
+executeInstruction (BinaryOperation op left right destiny) = do
+  leftValue <- getValueFromAddress left
+  rightValue <- getValueFromAddress right
+  let mValue = leftValue `op` rightValue
+  value <- liftEither $ maybe (Left "Cannot operate on addresses") Right mValue
+  setValue value destiny
+executeInstruction (GOTO index) = jump index
+executeInstruction (GOTOT address index) = do
+  value <- getValueFromAddress address
+  when (value == BoolWrapper True) (jump index)
+executeInstruction (GOTOF address index) = do
+  value <- getValueFromAddress address
+  when (value == BoolWrapper False) (jump index)
+executeInstruction (Verify valueAddress lowerAddress upperAddress) = do
+  value <- getValueFromAddress valueAddress
+  lower <- getValueFromAddress lowerAddress
+  upper <- getValueFromAddress upperAddress
+  case (value, lower, upper) of
+    (IntWrapper index, IntWrapper lowerBound, IntWrapper upperBound) -> when (index < lowerBound || index > upperBound) (throwError "Out of bounds array during verification")
+    _ -> throwError "Wrong datatypes for array verification"
+executeInstruction (ArrayAccess arrayBase offset destiny) = do
+  offsetW <- getValueFromAddress offset
+  case offsetW of
+    IntWrapper offsetValue -> do
+      arrayValue <- getValueFromAddress $ arrayBase + offsetValue
+      setValue arrayValue destiny
+    _ -> throwError "No integer offset for array access"
+executeInstruction (ArrayAssign arrayBase offset valueAddress) = do
+  offsetW <- getValueFromAddress offset
+  case offsetW of
+    IntWrapper offsetValue -> do
+      value <- getValueFromAddress valueAddress
+      setValue value (arrayBase + offsetValue)
+    _ -> throwError "No integer offset for array assignment"
 
 virtualMachine :: VirtualMachine ()
 virtualMachine = whileM_ executionCondition executionAction

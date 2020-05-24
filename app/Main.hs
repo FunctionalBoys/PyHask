@@ -31,8 +31,8 @@ opts = info (actionOpts <**> helper)
 writeLines :: (Foldable t) => t String -> Handle -> IO ()
 writeLines linez handle = forM_ linez (hPutStrLn handle)
 
-printCompilation :: FilePath -> (MainProgram, ParserState) -> IO ()
-printCompilation filename (_, pState) = do
+printCompilation :: FilePath -> ParserState -> IO ()
+printCompilation filename pState = do
   let quads = quadruplesSequence pState
   let eLines = mapM checkPlaceholder quads
   either putStrLn f eLines

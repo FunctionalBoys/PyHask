@@ -34,8 +34,8 @@ mainParser = do
 programParser :: Parser MainProgram
 programParser = between space (space *> eof) mainParser
 
-parseProgram :: String -> Text -> Either String (MainProgram, ParserState)
-parseProgram filename input = first errorBundlePretty $ runParser (runStateT programParser def) filename input
+parseProgram :: String -> Text -> Either String ParserState
+parseProgram filename input = bimap errorBundlePretty snd $ runParser (runStateT programParser def) filename input
 
 newIdentifierCheck :: (Text -> ParserState -> ParserState) -> Parser Text
 newIdentifierCheck f = do

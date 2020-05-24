@@ -5,9 +5,9 @@ import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
+import           GHC.Float
 import qualified Text.Megaparsec.Char.Lexer as L
 import           VirtualMachine.VMTypes
-import GHC.Float
 
 type Parser = Parsec Void String
 
@@ -84,7 +84,7 @@ divParser = f <$ symbol "Div"
 expParser :: Parser Operation
 expParser = f <$ symbol "Exp"
   where
-    f (IntWrapper left) (IntWrapper right) = Just $ FloatWrapper (int2Double(left) ** int2Double(right))
+    f (IntWrapper left) (IntWrapper right) = Just $ FloatWrapper (int2Double left ** int2Double right)
     f (FloatWrapper left) (FloatWrapper right) = Just $ FloatWrapper (left ** right)
     f _ _ = Nothing
 
@@ -108,53 +108,53 @@ ltParser = f <$ symbol "Lt"
 
 gtParser :: Parser Operation
 gtParser = f <$ symbol "Gt"
-  where 
+  where
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left > right)
     f _ _ = Nothing
 
 lteParser :: Parser Operation
 lteParser = f <$ symbol "Lte"
-  where 
+  where
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left <= right)
     f _ _ = Nothing
 
 gteParser :: Parser Operation
 gteParser = f <$ symbol "Gte"
-  where 
+  where
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left >= right)
     f _ _ = Nothing
 
 andParser :: Parser Operation
 andParser = f <$ symbol "And"
-  where 
+  where
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left && right)
     f _ _ = Nothing
 
 orParser :: Parser Operation
 orParser = f <$ symbol "Or"
-  where 
+  where
     f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left || right)
     f _ _ = Nothing
-  
+
 notParser :: Parser UnaryOperation
 notParser = f <$ symbol "Not"
-  where 
+  where
     f (BoolWrapper center) = Just $ BoolWrapper(not center)
-    f _ = Nothing
+    f _                    = Nothing
 
 negParser :: Parser UnaryOperation
 negParser = f <$ symbol "Neg"
-  where 
-    f (IntWrapper center) = Just $ IntWrapper(center * (-1))
+  where
+    f (IntWrapper center)   = Just $ IntWrapper(center * (-1))
     f (FloatWrapper center) = Just $ FloatWrapper(center * (-1))
-    f _ = Nothing
+    f _                     = Nothing
 
 floatConvertionParser :: Parser UnaryOperation
 floatConvertionParser = f <$ symbol "FloatConvert"
   where
-    f (IntWrapper center) = Just $ FloatWrapper(int2Double(center))
-    f (FloatWrapper center) = Just $ FloatWrapper(center)
-    f _ = Nothing
+    f (IntWrapper center)   = Just $ FloatWrapper(int2Double center)
+    f (FloatWrapper center) = Just $ FloatWrapper center
+    f _                     = Nothing
 
 operationParser :: Parser Operation
 operationParser = choice [sumParser, minusParser, timesParser, divParser, expParser, eqParser, neqParser, ltParser, gtParser, lteParser, gteParser, andParser, orParser]

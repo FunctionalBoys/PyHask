@@ -1,20 +1,22 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module VirtualMachine.ExecParser where
 
 import           Control.Monad
+import           Data.Text                  (Text)
 import           Data.Void
+import           GHC.Float
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-
-import           GHC.Float
 import qualified Text.Megaparsec.Char.Lexer as L
 import           VirtualMachine.VMTypes
 
-type Parser = Parsec Void String
+type Parser = Parsec Void Text
 
 sc :: Parser ()
 sc = L.space space1 empty empty
 
-symbol :: String -> Parser String
+symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 lexeme :: Parser a -> Parser a

@@ -104,20 +104,20 @@ nextAddress :: DataType -> (ParserState -> MemoryBlock) -> (MemoryBlock -> Parse
 nextAddress datatype fetch push memBlock memUpdate increase sType = do
   (nMB, address) <- nextAddressNoFunc fetch push increase sType
   isInsideFunction <- insideFunction
-  if isInsideFunction
-    then (do
+  when isInsideFunction $ do
       fName <- findScopeFunctionName
       functionDefinition <- findFunction fName
       let oldMemoryBlock = memBlock functionDefinition
       maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
       let newFDef = memUpdate maxMB functionDefinition
-      modify $ insertFunction fName newFDef)
-    else (do
-             oldMemoryBlock <- case datatype of
-               VarData  -> gets globalVariablesBlock
-               TempData -> gets globalTempBlock
-             maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
-             modify $ f maxMB)
+      modify $ insertFunction fName newFDef
+  isGlobalScope <- currentScopeIsGlobal
+  when isGlobalScope $ do
+      oldMemoryBlock <- case datatype of
+        VarData  -> gets globalVariablesBlock
+        TempData -> gets globalTempBlock
+      maxMB <- liftEither $ updateMemoryBlock oldMemoryBlock nMB
+      modify $ f maxMB
   return address
   where
     f mBlock pState = case datatype of

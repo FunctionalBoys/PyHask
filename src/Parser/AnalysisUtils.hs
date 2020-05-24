@@ -95,6 +95,11 @@ findScopeFunctionName = do
     f (ScopeTypeFunction fName) = Just fName
     f _                         = Nothing
 
+currentScopeIsGlobal :: Parser Bool
+currentScopeIsGlobal = do
+  sTypes <- fmap scopeType <$> gets scopes
+  return $ N.head sTypes == ScopeTypeGlobal
+
 insideFunction :: Parser Bool
 insideFunction = do
   sTypes <- fmap scopeType <$> gets scopes

@@ -32,6 +32,27 @@ pointer = lexeme L.decimal
 gotoParser :: Parser Instruction
 gotoParser = GOTO <$> (symbol "GOTO" *> nullP *> nullP *> pointer)
 
+gototParser :: Parser Instruction
+gototParser = GOTOT <$> (symbol "GOTOT" *> address) <*> pointer
+
+gotofParser :: Parser Instruction
+gotofParser = GOTOF <$> (symbol "GOTOF" *> address) <*> pointer
+
+assign :: Parser Instruction
+assign = Assign <$> (symbol "Assign" *> address) <*> pointer
+
+verify :: Parser Instruction
+verify = Verify <$> (symbol "ArrayVerify" *> address) <*> address <*> address
+
+arrayAccess :: Parser Instruction
+arrayAccess = ArrayAccess <$> (symbol "ArrayAccess" *> address) <*> address <*> address
+
+arrayAssign :: Parser Instruction
+arrayAssign = ArrayAssign <$> (symbol "ArrayAssign" *> address) <*> address <*> address
+
+programEnd :: Parser Instruction
+programEnd = ProgramEnd <$ (symbol "End" *> nullP *> nullP *> nullP)
+
 sumParser :: Parser Operation
 sumParser = f <$ symbol "Sum"
   where
@@ -136,10 +157,16 @@ floatConvertionParser = f <$ symbol "FloatConvert"
     f _ = Nothing
 
 operationParser :: Parser Operation
-operationParser = choice [sumParser]
+operationParser = choice [sumParser, minusParser, timesParser, divParser, expParser, eqParser, neqParser, ltParser, gtParser, lteParser, gteParser, andParser, orParser]
+
+unaryParser :: Parser UnaryOperation
+unaryParser = choice [notParser, negParser, floatConvertionParser]
+
+unaryOperationParser :: Parser Instruction
+unaryOperationParser = UnaryOperation <$> unaryParser <*> address <*> address
 
 binaryOperationParser :: Parser Instruction
 binaryOperationParser = BinaryOperation <$> operationParser <*> address <*> address <*> address
 
 instrunctionParser :: Parser Instruction
-instrunctionParser = choice [gotoParser, binaryOperationParser]
+instrunctionParser = choice [gotoParser, binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd]

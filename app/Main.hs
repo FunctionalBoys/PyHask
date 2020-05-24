@@ -6,6 +6,7 @@ import           Options.Applicative
 import           Parser.ExecutableCreator
 import           Parser.Parser
 import           Parser.ParserTypes       hiding (Parser)
+import           System.FilePath          (takeBaseName)
 import           System.IO
 
 newtype Filename = Filename { name :: String }
@@ -28,7 +29,7 @@ printResult filename (_, pState) = do
   let eLines = mapM checkPlaceholder quads
   either putStrLn f eLines
   where
-    f linez = withFile (filename ++ "c") WriteMode (writeLines linez)
+    f linez = withFile (takeBaseName filename ++ ".phc") WriteMode (writeLines linez)
 
 main :: IO ()
 main = do

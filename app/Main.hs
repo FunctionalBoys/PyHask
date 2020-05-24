@@ -9,22 +9,30 @@ import           Parser.ParserTypes       hiding (Parser)
 import           System.FilePath          (takeBaseName)
 import           System.IO
 
-newtype Filename = Filename { name :: String }
+data ActionFilename = CompileAction String | ExecuteAction String
 
-fileArg :: Parser Filename
-fileArg = Filename <$> argument str (metavar "FILE")
+compileArg :: Parser ActionFilename
+compileArg = CompileAction <$> argument str (metavar "COMPILE_FILE")
 
-opts :: ParserInfo Filename
-opts = info (fileArg <**> helper)
+executeArg :: Parser ActionFilename
+executeArg = ExecuteAction <$> argument str (metavar "EXECUTE_FILE")
+
+actionOpts :: Parser ActionFilename
+actionOpts = subparser $
+  command "compile" (info (compileArg <**> helper) (progDesc "Compile a program"))
+  <> command "execute" (info (executeArg <**> helper) (progDesc "Execute a program"))
+
+opts :: ParserInfo ActionFilename
+opts = info (actionOpts <**> helper)
   (fullDesc
-   <> progDesc "Parse a PyHask file"
-   <> header "PyHask parser")
+   <> progDesc "Compile or execute a PyHask compiled file"
+   <> header "PyHask compiler and virtual machine")
 
 writeLines :: (Foldable t) => t String -> Handle -> IO ()
 writeLines linez handle = forM_ linez (hPutStrLn handle)
 
-printResult :: FilePath -> (MainProgram, ParserState) -> IO ()
-printResult filename (_, pState) = do
+printCompilation :: FilePath -> (MainProgram, ParserState) -> IO ()
+printCompilation filename (_, pState) = do
   let quads = quadruplesSequence pState
   let eLines = mapM checkPlaceholder quads
   either putStrLn f eLines
@@ -33,7 +41,9 @@ printResult filename (_, pState) = do
 
 main :: IO ()
 main = do
-  fileData <- execParser opts
-  let filename = name fileData
-  input <- T.readFile filename
-  either putStrLn (printResult filename) $ parseProgram filename input
+  actionData <- execParser opts
+  case actionData of
+    CompileAction filename -> do
+      input <- T.readFile filename
+      either putStrLn (printCompilation filename) $ parseProgram filename input
+    ExecuteAction _ -> putStrLn "Execution not yet supported"

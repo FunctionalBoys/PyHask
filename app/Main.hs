@@ -1,11 +1,12 @@
 module Main where
 
 import           Control.Monad
-import           Control.Monad.State.Lazy
 import qualified Data.Text.IO             as T
 import           Options.Applicative
+import           Parser.ExecutableCreator
 import           Parser.Parser
 import           Parser.ParserTypes       hiding (Parser)
+import           System.IO
 
 newtype Filename = Filename { name :: String }
 
@@ -18,26 +19,20 @@ opts = info (fileArg <**> helper)
    <> progDesc "Parse a PyHask file"
    <> header "PyHask parser")
 
-indexedPrint :: (Show a) => a -> StateT Int IO ()
-indexedPrint a = do
-  index <- get
-  liftIO $ putStr $ show index ++ ". "
-  liftIO $ print a
-  put (index + 1)
+writeLines :: (Foldable t) => t String -> Handle -> IO ()
+writeLines linez handle = forM_ linez (hPutStrLn handle)
 
-printResult :: (MainProgram, ParserState) -> IO ()
-printResult (mainProgram, pState) = do
-  putStrLn "Printing syntax tree"
-  print mainProgram
-  putStrLn "Printing function definitions"
-  print (functionDefinitions pState)
-  putStrLn "Printing quads"
+printResult :: FilePath -> (MainProgram, ParserState) -> IO ()
+printResult filename (_, pState) = do
   let quads = quadruplesSequence pState
-  evalStateT (forM_ quads indexedPrint) 0
+  let eLines = mapM checkPlaceholder quads
+  either putStrLn f eLines
+  where
+    f linez = withFile (filename ++ "c") WriteMode (writeLines linez)
 
 main :: IO ()
 main = do
   fileData <- execParser opts
   let filename = name fileData
   input <- T.readFile filename
-  either putStrLn printResult $ parseProgram filename input
+  either putStrLn (printResult filename) $ parseProgram filename input

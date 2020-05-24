@@ -1,4 +1,4 @@
-module Parser.ExecutableCreator (checkPlaceholder) where
+module Parser.ExecutableCreator (checkPlaceholder, displayTypeMemoryBlock, displayMemoryBlock, displayVarTmpMemoryBlock) where
 
 import           Parser.ParserTypes
 
@@ -25,3 +25,16 @@ checkPlaceholder (QuadArrayAssign (Address t1) (Address t2) (Address t3)) = Righ
 checkPlaceholder QuadNoOP = Right "NoOp null null null"
 checkPlaceholder QuadEnd = Right "End null null null"
 checkPlaceholder (QuadOp op (Address t1) (Address t2) (Address t3)) = Right $ show op ++ " " ++ show t1 ++ " " ++ show t2 ++ " " ++ show t3
+
+displayTypeMemoryBlock :: TypeMemoryBlock -> String
+displayTypeMemoryBlock (TypeMemoryBlock mlb mub cd) = show mlb ++ " " ++ show mub ++ " " ++ show cd
+
+displayMemoryBlock :: MemoryBlock ->  String
+displayMemoryBlock (MemoryBlock mbi mbf mbc mbb) = displayTypeMemoryBlock mbi ++ "\n" ++ displayTypeMemoryBlock mbf ++ "\n" ++ displayTypeMemoryBlock mbc ++ "\n" ++ displayTypeMemoryBlock mbb
+
+displayVarTmpMemoryBlock :: MemoryBlock -> MemoryBlock -> String
+displayVarTmpMemoryBlock (MemoryBlock mbi1 mbf1 mbc1 mbb1) (MemoryBlock mbi2 mbf2 mbc2 mbb2) = 
+    displayTypeMemoryBlock mbi1 ++ " " ++ displayTypeMemoryBlock mbi2 ++ "\n" ++
+    displayTypeMemoryBlock mbf1 ++ " " ++ displayTypeMemoryBlock mbf2 ++ "\n" ++
+    displayTypeMemoryBlock mbc1 ++ " " ++ displayTypeMemoryBlock mbc2 ++ "\n" ++
+    displayTypeMemoryBlock mbb1 ++ " " ++ displayTypeMemoryBlock mbb2 ++ "\n"

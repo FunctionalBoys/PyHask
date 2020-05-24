@@ -55,6 +55,9 @@ arrayAssign = ArrayAssign <$> (symbol "ArrayAssign" *> address) <*> address <*> 
 programEnd :: Parser Instruction
 programEnd = ProgramEnd <$ (symbol "End" *> nullP *> nullP *> nullP)
 
+noOp :: Parser Instruction
+noOp = NoOp <$ (symbol "NoOp" *> nullP *> nullP *> nullP)
+
 sumParser :: Parser Operation
 sumParser = f <$ symbol "Sum"
   where
@@ -171,4 +174,22 @@ binaryOperationParser :: Parser Instruction
 binaryOperationParser = BinaryOperation <$> operationParser <*> address <*> address <*> address
 
 instrunctionParser :: Parser Instruction
-instrunctionParser = choice [gotoParser, binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd]
+instrunctionParser = choice [gotoParser, binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd, noOp]
+
+typeBoundParser :: Parser TypeBounds
+typeBoundParser = do
+  vL <- address
+  vU <- address
+  _ <- address
+  tL <- address
+  tU <- address
+  _ <- address
+  return (TypeBounds vL vU tL tU)
+
+memoryBoundsParser :: Parser MemoryBounds
+memoryBoundsParser = do
+  iB <- typeBoundParser
+  fB <- typeBoundParser
+  cB <- typeBoundParser
+  bB <- typeBoundParser
+  return (MemoryBounds iB fB cB bB)

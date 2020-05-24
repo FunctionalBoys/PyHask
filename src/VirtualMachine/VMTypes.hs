@@ -20,6 +20,7 @@ data Instruction =
       | Verify Address Address Address
       | ArrayAccess Address Address Address
       | ArrayAssign Address Address Address
+      | NoOp
       | ProgramEnd
 
 data MemoryBlock = MemoryBlock { charMemory  :: Vector Char,

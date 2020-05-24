@@ -45,6 +45,7 @@ executeInstruction ProgramEnd = throwError "Program end should be unreachable by
 executeInstruction (Assign source destiny) = do
   value <- getValueFromAddress source
   setValue value destiny
+executeInstruction NoOp = return ()
 executeInstruction (BinaryOperation op left right destiny) = do
   leftValue <- getValueFromAddress left
   rightValue <- getValueFromAddress right

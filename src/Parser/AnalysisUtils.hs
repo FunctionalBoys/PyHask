@@ -77,10 +77,10 @@ getArrayInfo ident = (variableType <$> findVariable ident) >>= getArrayInfoFromT
 memberKey :: Text -> Text -> Text
 memberKey obj member = obj <> "." <> member
 
-existsScope :: ScopeType -> Parser Bool
+existsScope :: (ScopeType -> Bool) -> Parser Bool
 existsScope scopeT = do
   scopeTypes <- fmap scopeType <$> gets scopes
-  return (scopeT `elem` scopeTypes)
+  return (any scopeT scopeTypes)
 
 findFunction :: Text -> Parser FunctionDefinition
 findFunction fName = do
@@ -137,13 +137,21 @@ addScope' :: ScopeType -> Scope -> (ParserState -> ParserState)
 addScope' sType Scope{scopeType=ScopeTypeGlobal} = modifyScopes $ N.cons (Scope sType [] M.empty newLocalVariables newLocalTemp)
 addScope' sType Scope{scopeVariablesMemory=mVars, scopeTempMemory=mTemp} = modifyScopes $ N.cons (Scope sType [] M.empty mVars mTemp)
 
-destroyScope :: Parser ()
+destroyScope :: Parser ScopeType
 destroyScope = do
-  mScopes <- snd . N.uncons <$> gets scopes
+  (popped, mScopes) <- N.uncons <$> gets scopes
   maybe (fail "Can't destroy all scopes") (\s -> modify(modifyScopes $ const s)) mScopes
+  return $ scopeType popped
 
 scoped :: ScopeType -> Parser a -> Parser a
 scoped sType = between (addScope sType) destroyScope
+
+dataScoped :: ScopeType -> Parser a -> Parser (a,ScopeType)
+dataScoped sType parser = do
+  addScope sType
+  result <- parser
+  scopedData <- destroyScope
+  return (result, scopedData)
 
 createVariable :: ComposedType -> Maybe Expr -> Address -> Variable
 createVariable vType expr = Variable vType (isJust expr)
@@ -205,6 +213,11 @@ setVariableAsInitialized ident pState@ParserState{scopes=ss} = pState{scopes=upd
 
 insideLoop :: Text -> Parser ()
 insideLoop symbolName = do
-  existsFor <- existsScope ScopeTypeFor
-  existsWhile <- existsScope ScopeTypeWhile
+  existsFor <- existsScope forCheck
+  existsWhile <- existsScope whileCheck
   guardFail (existsFor || existsWhile) $ T.unpack symbolName ++ " must be inside a loop"
+  where
+    forCheck (ScopeTypeFor _ _) = True
+    forCheck _                  = False
+    whileCheck (ScopeTypeWhile _ _) = True
+    whileCheck _                    = False

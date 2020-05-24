@@ -68,9 +68,9 @@ data Quad =
   deriving (Eq,Show)
 
 data ScopeType =
-    ScopeTypeFor
+    ScopeTypeFor [Int] [Int]
   | ScopeTypeConditional
-  | ScopeTypeWhile
+  | ScopeTypeWhile [Int] [Int]
   | ScopeTypeFunction Text
   | ScopeTypeClass Text
   | ScopePlaceholder

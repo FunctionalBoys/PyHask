@@ -45,6 +45,53 @@ fillGOTO :: Int -> Quad -> Either String Quad
 fillGOTO index QuadGOTOPlaceholder = Right $ QuadGOTO index
 fillGOTO _  quad = Left $ show quad ++ " is not goto placeholder"
 
+writeLoopJumps :: Int -> Int -> ScopeType -> Parser ()
+writeLoopJumps continueLocation breakLocation (ScopeTypeWhile continues breaks) = do
+  forM_ continues (safeQuadrupleUpdate (fillGOTO continueLocation))
+  forM_ breaks (safeQuadrupleUpdate (fillGOTO breakLocation))
+writeLoopJumps continueLocation breakLocation (ScopeTypeFor continues breaks) = do
+  forM_ continues (safeQuadrupleUpdate (fillGOTO continueLocation))
+  forM_ breaks (safeQuadrupleUpdate (fillGOTO breakLocation))
+writeLoopJumps _ _ _ = fail "Trying to make continue and break jumps with no loop scope"
+
+addContinue :: Int -> ScopeType -> ScopeType
+addContinue index (ScopeTypeFor continues breaks) = ScopeTypeFor (index:continues) breaks
+addContinue index (ScopeTypeWhile continues breaks) = ScopeTypeWhile (index : continues) breaks
+addContinue _ s = s
+
+addBreak :: Int -> ScopeType -> ScopeType
+addBreak index (ScopeTypeFor continues breaks) = ScopeTypeFor continues (index:breaks)
+addBreak index (ScopeTypeWhile continues breaks) = ScopeTypeWhile continues (index:breaks)
+addBreak _ s = s
+
+transformFirstLoop :: (ScopeType -> ScopeType) -> Scope -> State Bool Scope
+transformFirstLoop transformation scope = do
+  isTransformed <- get
+  let sType = scopeType scope
+  if isTransformed || not (isLoop sType)
+    then return scope
+    else scope{scopeType=transformation sType} <$ put True
+  where
+    isLoop (ScopeTypeFor _ _)   = True
+    isLoop (ScopeTypeWhile _ _) = True
+    isLoop _                    = False
+
+addBreakToLoop :: Parser ()
+addBreakToLoop = do
+  cont <- gets quadruplesCounter
+  registerQuadruple QuadGOTOPlaceholder
+  pState@ParserState{scopes=ss} <- get
+  let transformedScopes = evalState (forM ss (transformFirstLoop $ addBreak cont)) False
+  put pState{scopes=transformedScopes}
+
+addContinueToLoop :: Parser ()
+addContinueToLoop = do
+  cont <- gets quadruplesCounter
+  registerQuadruple QuadGOTOPlaceholder
+  pState@ParserState{scopes=ss} <- get
+  let transformedScopes = evalState (forM ss (transformFirstLoop $ addContinue cont)) False
+  put pState{scopes=transformedScopes}
+
 memoryBlockToMaybeAddress :: TypeMemoryBlock -> Maybe Address
 memoryBlockToMaybeAddress (TypeMemoryBlock _ mUBound cDirection)
   | cDirection <= mUBound = Just (Address cDirection)

@@ -105,10 +105,11 @@ functionParser = do
 whileParser :: Parser WhileLoop
 whileParser = do
   cont <- gets quadruplesCounter
-  whileLoop@WhileLoop{whileConditionEnd = end} <- scoped ScopeTypeWhile $ indentBlock whileBlock
+  (whileLoop@WhileLoop{whileConditionEnd = end}, scopeData) <- dataScoped (ScopeTypeWhile [] []) $ indentBlock whileBlock
   registerQuadruple $ QuadGOTO cont
   cont2 <- gets quadruplesCounter
   safeQuadrupleUpdate (fillGOTOF cont2) end
+  writeLoopJumps cont cont2 scopeData
   return whileLoop
   where
     whileBlock = do
@@ -249,10 +250,10 @@ statement = choice [ continueParser
                    , readParser]
 
 breakParser :: Parser Statement
-breakParser = breakSymbol <* insideLoop "break"
+breakParser = breakSymbol <* insideLoop "break" <* addBreakToLoop
 
 continueParser :: Parser Statement
-continueParser = continueSymbol <* insideLoop "continue"
+continueParser = continueSymbol <* insideLoop "continue" <* addContinueToLoop
 
 exprId :: Parser SimpleExpr
 exprId = Var <$> identifier
@@ -390,10 +391,11 @@ objectAssignment = do
 
 forParser :: Parser ForLoop
 forParser = do
-  forLoop@ForLoop{forConditionEnd=conditionEnd,forAssignmentStart=assignmentStart} <- scoped ScopeTypeFor $ indentBlock forBlock
+  (forLoop@ForLoop{forConditionEnd=conditionEnd,forAssignmentStart=assignmentStart},scopeData) <- dataScoped (ScopeTypeFor [] [])$ indentBlock forBlock
   registerQuadruple $ QuadGOTO assignmentStart
   endFor <- gets quadruplesCounter
   safeQuadrupleUpdate (fillGOTOF endFor) conditionEnd
+  writeLoopJumps assignmentStart endFor scopeData
   return forLoop
   where
     forBlock = do

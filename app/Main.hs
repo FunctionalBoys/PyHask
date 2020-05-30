@@ -28,16 +28,18 @@ opts = info (actionOpts <**> helper)
    <> progDesc "Compile or execute a PyHask compiled file"
    <> header "PyHask compiler and virtual machine")
 
-writeLines :: (Foldable t) => t String -> Handle -> IO ()
-writeLines linez handle = forM_ linez (hPutStrLn handle)
+writeLines :: (Foldable t) => String -> t String -> Handle -> IO ()
+writeLines gMemories linez handle = do
+  hPutStrLn handle gMemories
+  forM_ linez (hPutStrLn handle)
 
 printCompilation :: FilePath -> ParserState -> IO ()
-printCompilation filename pState = do
-  let quads = quadruplesSequence pState
+printCompilation filename ParserState{quadruplesSequence=quads, globalVariablesBlock=globalVars, globalTempBlock=globalTempVars} = do
+  let gMemories = displayVarTmpMemoryBlock globalVars globalTempVars
   let eLines = mapM checkPlaceholder quads
-  either putStrLn f eLines
+  either putStrLn (f gMemories) eLines
   where
-    f linez = withFile (takeBaseName filename ++ ".phc") WriteMode (writeLines linez)
+    f gMemories linez = withFile (takeBaseName filename ++ ".phc") WriteMode (writeLines gMemories linez)
 
 main :: IO ()
 main = do

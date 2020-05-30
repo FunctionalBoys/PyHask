@@ -1,5 +1,6 @@
-module Parser.ExecutableCreator (checkPlaceholder, displayTypeMemoryBlock, displayMemoryBlock, displayVarTmpMemoryBlock) where
+module Parser.ExecutableCreator (checkPlaceholder, displayVarTmpMemoryBlock, displayMemoryBlock, stringifyLiteralBlock) where
 
+import qualified Data.HashMap.Strict as H
 import           Parser.ParserTypes
 
 checkPlaceholder :: Quad -> Either String String
@@ -33,8 +34,14 @@ displayMemoryBlock :: MemoryBlock ->  String
 displayMemoryBlock (MemoryBlock mbi mbf mbc mbb) = displayTypeMemoryBlock mbi ++ "\n" ++ displayTypeMemoryBlock mbf ++ "\n" ++ displayTypeMemoryBlock mbc ++ "\n" ++ displayTypeMemoryBlock mbb
 
 displayVarTmpMemoryBlock :: MemoryBlock -> MemoryBlock -> String
-displayVarTmpMemoryBlock (MemoryBlock mbi1 mbf1 mbc1 mbb1) (MemoryBlock mbi2 mbf2 mbc2 mbb2) = 
+displayVarTmpMemoryBlock (MemoryBlock mbi1 mbf1 mbc1 mbb1) (MemoryBlock mbi2 mbf2 mbc2 mbb2) =
     displayTypeMemoryBlock mbi1 ++ " " ++ displayTypeMemoryBlock mbi2 ++ "\n" ++
     displayTypeMemoryBlock mbf1 ++ " " ++ displayTypeMemoryBlock mbf2 ++ "\n" ++
     displayTypeMemoryBlock mbc1 ++ " " ++ displayTypeMemoryBlock mbc2 ++ "\n" ++
     displayTypeMemoryBlock mbb1 ++ " " ++ displayTypeMemoryBlock mbb2 ++ "\n"
+
+stringifyAddressValue :: (Literal, Address) -> String
+stringifyAddressValue (literal, Address address) = show literal <> " " <> show address <> "\n"
+
+stringifyLiteralBlock :: LiteralBlock -> String
+stringifyLiteralBlock (LiteralBlock memoryBlock addressMap) = displayMemoryBlock memoryBlock <> "\n" <> concat (stringifyAddressValue <$> H.toList addressMap)

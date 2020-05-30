@@ -28,7 +28,14 @@ data Literal =
   | LiteralFloat Double
   | LiteralChar Char
   | LiteralString String
-  | LiteralBool Bool deriving (Eq,Show,Generic)
+  | LiteralBool Bool deriving (Eq,Generic)
+
+instance Show Literal where
+  show (LiteralInt i) = show i
+  show (LiteralFloat f) = show f
+  show (LiteralChar c) = [c]
+  show (LiteralString s) = s
+  show (LiteralBool b) = show b
 
 instance Hashable Literal where
   hashWithSalt s x = genericHashWithSalt s x

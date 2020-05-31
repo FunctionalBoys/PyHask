@@ -195,7 +195,8 @@ data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
                                } deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
-                                           argumentType :: SimpleType
+                                           argumentType :: SimpleType,
+                                           argumentAddress :: Address
                                          } deriving (Eq,Show)
 
 data Function = Function { functionName       :: Text,

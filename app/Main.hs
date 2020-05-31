@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Main where
 
 import           Control.Monad
@@ -5,7 +7,8 @@ import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.State.Lazy
 import qualified Data.List.NonEmpty              as N
-import           Data.Text                       (Text)
+import qualified Data.Map.Strict                 as M
+import           Data.Text                       (Text, unpack)
 import qualified Data.Text.IO                    as T
 import qualified Data.Vector                     as V
 import           Options.Applicative
@@ -44,13 +47,15 @@ writeLines line linez handle = do
   forM_ linez (hPutStrLn handle)
 
 printCompilation :: FilePath -> ParserState -> IO ()
-printCompilation filename ParserState{quadruplesSequence=quads, globalVariablesBlock=globalVars, globalTempBlock=globalTempVars, literalBlock=literals} = do
-  let gMemories = displayVarTmpMemoryBlock globalVars globalTempVars
-  let lBlock = stringifyLiteralBlock literals
-  let eLines = mapM checkPlaceholder quads
-  either putStrLn (f $ gMemories <> lBlock) eLines
+printCompilation filename ParserState{..} = do
+  let gMemories = displayVarTmpMemoryBlock globalVariablesBlock globalTempBlock
+  let lBlock = stringifyLiteralBlock literalBlock
+  let eLines = mapM checkPlaceholder quadruplesSequence
+  let fLines = concat $ g <$> M.toList functionDefinitions
+  either putStrLn (f $ gMemories <> lBlock <> fLines) eLines
   where
     f gMemories linez = withFile (takeBaseName filename ++ ".phc") WriteMode (writeLines gMemories linez)
+    g (fName, fDefinition) = unpack fName <> " " <> stringifyFunctionDefinition fDefinition
 
 parseExec :: String -> Text -> Either String (IO (Either String ()))
 parseExec filename input = do

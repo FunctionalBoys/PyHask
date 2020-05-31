@@ -1,6 +1,11 @@
-module Parser.ExecutableCreator (checkPlaceholder, displayVarTmpMemoryBlock, displayMemoryBlock, stringifyLiteralBlock) where
+{-# LANGUAGE RecordWildCards #-}
 
-import qualified Data.HashMap.Strict as H
+module Parser.ExecutableCreator (checkPlaceholder, displayVarTmpMemoryBlock, displayMemoryBlock, stringifyLiteralBlock, stringifyFunctionDefinition) where
+
+import           Control.Monad.State.Lazy
+import           Control.Monad.Writer.Lazy
+import qualified Data.HashMap.Strict       as H
+import           Data.Text                 (unpack)
 import           Parser.ParserTypes
 
 checkPlaceholder :: Quad -> Either String String
@@ -16,8 +21,8 @@ checkPlaceholder (QuadTPlaceholder _) = Left "No deberian existir Placeholders e
 checkPlaceholder (QuadT (Address t1) t2) = Right $ "GOTOT " ++ show t1 ++ " null " ++ show t2
 checkPlaceholder QuadGOTOPlaceholder = Left "No deberian existir Placeholders en esta fase!"
 checkPlaceholder (QuadGOTO t1) = Right $ "GOTO " ++ "null null " ++ show t1
-checkPlaceholder (QuadGOSUB t) = Right $ "GOSUB " ++ show t
-checkPlaceholder (QuadEra t) = Right $ "Era " ++ show t
+checkPlaceholder (QuadGOSUB t) = Right $ "GOSUB " ++ unpack t
+checkPlaceholder (QuadEra t) = Right $ "Era " ++ unpack t
 checkPlaceholder (QuadFuncParam (Address t1) t2) = Right $ "FuncParam " ++ show t1 ++ " null " ++ show t2
 checkPlaceholder QuadEndFunc = Right "EndFunc null null null"
 checkPlaceholder (QuadVerify (Address t1) (Address t2) (Address t3)) = Right $ "ArrayVerify " ++ show t1 ++ " " ++ show t2 ++ " " ++ show t3
@@ -45,3 +50,15 @@ stringifyAddressValue (literal, Address address) = show literal <> " " <> show a
 
 stringifyLiteralBlock :: LiteralBlock -> String
 stringifyLiteralBlock (LiteralBlock memoryBlock addressMap) = displayMemoryBlock memoryBlock <> "\n" <> concat (stringifyAddressValue <$> H.toList addressMap)
+
+stringifyFunctionArguments :: [FunctionArgument] -> String
+stringifyFunctionArguments arguments = execWriter $ execStateT (forM_ arguments stringifyFunctionArguments') 0
+
+stringifyFunctionArguments' :: FunctionArgument -> StateT Int (Writer String) ()
+stringifyFunctionArguments' FunctionArgument{argumentAddress=Address address} = do
+  index <- get
+  tell $ show index <> " " <> show address <> "\n"
+  put (index + 1)
+
+stringifyFunctionDefinition :: FunctionDefinition -> String
+stringifyFunctionDefinition FunctionDefinition{..} = show functionDefinitionIP <> "\n" <> displayVarTmpMemoryBlock functionDefinitionVarMB functionDefinitionTempMB <> show (length functionDefinitionArguments) <> "\n" <> stringifyFunctionArguments functionDefinitionArguments

@@ -4,6 +4,7 @@ import           Control.Monad.Except     (ExceptT)
 import           Control.Monad.Reader     (ReaderT)
 import           Control.Monad.State.Lazy (StateT)
 import           Data.List.NonEmpty       (NonEmpty)
+import           Data.Map.Strict          (Map)
 import           Data.Vector              (Vector)
 
 type Address = Int
@@ -40,6 +41,7 @@ data ContextType = Local | Global | Static deriving (Eq,Show)
 data ParserResult = ParserResult { globalBounds   :: MemoryBounds,
                                    staticBounds   :: MemoryBounds,
                                    parsedLiterals :: [(TypeWrapper, Address)],
+                                   parsedDefinitions :: Map String FunctionDefinition,
                                    instructions   :: NonEmpty Instruction
                                  }
 
@@ -54,6 +56,15 @@ data MachineState = MachineState { instructionPointer :: Pointer,
                                    localContexts      :: [LocalContext]
                                  }
 
+data FunctionDefinition = FunctionDefinition { instructionStart :: Pointer,
+                                               functionBounds :: MemoryBounds,
+                                               parameterAddress :: Vector Address
+                                             }
+
+data MachineRead = MachineRead { machineInstructions :: Vector Instruction,
+                                 functionDefinitions :: Map String FunctionDefinition
+                               }
+
 data TypeBounds = TypeBounds { varLower  :: Int,
                                varUpper  :: Int,
                                tempLower :: Int,
@@ -66,7 +77,7 @@ data MemoryBounds = MemoryBounds { intBounds   :: TypeBounds,
                                    boolBounds  :: TypeBounds
                                  } deriving (Eq,Show)
 
-type VirtualMachine = ReaderT (Vector Instruction) (StateT MachineState (ExceptT String IO))
+type VirtualMachine = ReaderT MachineRead (StateT MachineState (ExceptT String IO))
 
 isInBounds :: TypeBounds -> Address -> Bool
 isInBounds (TypeBounds vLower vUpper tLower tUpper) address = address >= vLower && address <= vUpper || address >= tLower && address <= tUpper

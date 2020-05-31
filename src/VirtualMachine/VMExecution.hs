@@ -18,7 +18,7 @@ whileM_ predicate action = go
 nextInstruction :: VirtualMachine Instruction
 nextInstruction = do
   currentPointer <- gets instructionPointer
-  mInstruction <- asks (V.!? currentPointer)
+  mInstruction <- asks $ (V.!? currentPointer) <<< machineInstructions
   maybe (throwError "Instruction pointer out of bounds") return mInstruction
 
 executionCondition :: VirtualMachine Bool

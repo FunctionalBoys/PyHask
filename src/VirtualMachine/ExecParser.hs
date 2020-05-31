@@ -1,17 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module VirtualMachine.ExecParser (parseExecutable) where
 
 import           Control.Monad
 import           Control.Monad.Combinators.NonEmpty
+import           Data.Bifunctor
+import qualified Data.Map.Strict                    as M
 import           Data.Text                          (Text)
+import qualified Data.Vector                        as V
 import           Data.Void
 import           GHC.Float
 import           Text.Megaparsec                    hiding (some)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer         as L
 import           VirtualMachine.VMTypes
-import Data.Bifunctor
 
 type Parser = Parsec Void Text
 
@@ -48,8 +51,28 @@ pointer = try (lexeme L.decimal) <?> "Instruction pointer"
 parseExecutable :: String -> Text -> Either String ParserResult
 parseExecutable filename input = first errorBundlePretty $ runParser execParser filename input
 
+functionName :: Parser String
+functionName = (lexeme . try) p
+  where
+    p = (:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_')
+
 execParser :: Parser ParserResult
-execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> many valueAddressParser  <*> some instructionParser
+execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> many valueAddressParser <*> (M.fromList <$> many nameDefinitionParser) <*> some instructionParser
+
+nameDefinitionParser :: Parser (String, FunctionDefinition)
+nameDefinitionParser = try $ (,) <$> functionName <*> functionDefinitionParser
+
+functionDefinitionParser :: Parser FunctionDefinition
+functionDefinitionParser = do
+  instructionStart <- pointer
+  functionBounds <- memoryBoundsParser
+  paramCount <- integer
+  let emptyParams = V.replicate paramCount 0
+  params <- count paramCount parameter
+  let parameterAddress = emptyParams V.// params
+  return FunctionDefinition{..}
+  where
+    parameter = (,) <$> integer <*> address
 
 gotoParser :: Parser Instruction
 gotoParser = GOTO <$> (symbol "GOTO" *> nullP *> nullP *> pointer) <?> "GOTO instruction"

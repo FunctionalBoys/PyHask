@@ -59,10 +59,11 @@ printCompilation filename ParserState{..} = do
 
 parseExec :: String -> Text -> Either String (IO (Either String ()))
 parseExec filename input = do
-  parserResult@ParserResult{instructions=instructionList} <- parseExecutable filename input
+  parserResult@ParserResult{instructions=instructionList,parsedDefinitions=definitions} <- parseExecutable filename input
   mState <- createVirtualMachineState parserResult
   let instructionVector = V.fromList $ N.toList instructionList
-  return $ runExceptT $ evalStateT (runReaderT virtualMachine instructionVector) mState
+  let machineRead = MachineRead instructionVector definitions
+  return $ runExceptT $ evalStateT (runReaderT virtualMachine machineRead) mState
 
 main :: IO ()
 main = do

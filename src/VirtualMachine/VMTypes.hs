@@ -3,6 +3,7 @@ module VirtualMachine.VMTypes where
 import           Control.Monad.Except     (ExceptT)
 import           Control.Monad.Reader     (ReaderT)
 import           Control.Monad.State.Lazy (StateT)
+import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Vector              (Vector)
 
 type Address = Int
@@ -21,6 +22,7 @@ data Instruction =
       | ArrayAccess Address Address Address
       | ArrayAssign Address Address Address
       | NoOp
+      | Print Address
       | ProgramEnd
 
 data MemoryBlock = MemoryBlock { charMemory  :: Vector Char,
@@ -34,6 +36,12 @@ data MachineType = IntType | BoolType | CharType | FloatType deriving (Eq,Show)
 data TypeWrapper = IntWrapper Int | FloatWrapper Double | CharWrapper Char | BoolWrapper Bool deriving (Eq,Show)
 
 data ContextType = Local | Global | Static deriving (Eq,Show)
+
+data ParserResult = ParserResult { globalBounds   :: MemoryBounds,
+                                   staticBounds   :: MemoryBounds,
+                                   parsedLiterals :: [(TypeWrapper, Address)],
+                                   instructions   :: NonEmpty Instruction
+                                 }
 
 data LocalContext = LocalContext { checkpoint :: Pointer,
                                    localMemory :: MemoryBlock,

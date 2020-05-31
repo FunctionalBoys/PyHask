@@ -1,4 +1,4 @@
-module Parser.Expressions (exprCheck) where
+module Parser.Expressions (exprCheck, makeExprParser) where
 
 import qualified Data.List.NonEmpty   as N
 import qualified Data.Map             as M
@@ -7,6 +7,7 @@ import           Parser.AnalysisUtils
 import           Parser.GenUtils
 import           Parser.ParserTypes
 import           Parser.Utils
+import Control.Monad.Combinators
 
 exprCheck :: SimpleExpr -> Parser Expr
 exprCheck var@(Var ident) = do
@@ -67,6 +68,31 @@ exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2
   combineExpressions op expr1 expr2
+
+makeExprParser :: Parser a -> [[Operator a]] -> Parser a
+makeExprParser = foldl checkPrecedence
+
+checkPrecedence :: Parser a -> [Operator a] -> Parser a
+checkPrecedence term operations = term' >>= \x -> choice [rightAssociatives' x, leftAssociatives' x, return x]
+  where
+    (rightAssociatives, leftAssociatives, prefixes) = foldr separateOperations ([], [], []) operations
+    term' = option id (choice prefixes) <*> term
+    rightAssociatives' x = do
+      combiner <- choice rightAssociatives
+      parsedTerm <- term' >>= \r -> rightAssociatives' r <|> return r
+      return $ combiner x parsedTerm
+    leftAssociatives' x = do
+      combiner <- choice leftAssociatives
+      parsedTerm <- term'
+      let r = combiner x parsedTerm
+      leftAssociatives' r <|> return r
+
+type Operations a = ([Parser (a -> a -> a)], [Parser (a -> a -> a)], [Parser (a -> a)])
+
+separateOperations :: Operator a -> Operations a -> Operations a
+separateOperations (InfixR operation) (rights, lefts, prefixes) = (operation:rights, lefts, prefixes)
+separateOperations (InfixL operation) (rights, lefts, prefixes) = (rights, operation:lefts, prefixes)
+separateOperations (Prefix operation) (rights, lefts, prefixes) = (rights, lefts, operation:prefixes)
 
 arithmeticOperations :: [Op]
 arithmeticOperations = [Sum, Minus, Times, Div, Exp]

@@ -21,6 +21,11 @@ type Parser = StateT ParserState (Parsec Void Text)
 
 type IndentOpt = L.IndentOpt Parser
 
+data Operator a =
+      InfixL (Parser (a -> a -> a))
+    | InfixR (Parser (a -> a -> a))
+    | Prefix (Parser (a -> a))
+
 data SimpleType = IntType | FloatType | BoolType | CharType deriving (Eq,Show)
 
 data Literal =

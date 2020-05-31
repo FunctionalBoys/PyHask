@@ -4,13 +4,11 @@
 
 module Parser.Parser (parseProgram) where
 
-import           Control.Monad.Combinators.Expr
 import           Control.Monad.Combinators.NonEmpty
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Default.Class
 import qualified Data.List.NonEmpty                 as N
-import qualified Data.Map                           as M
 import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
@@ -25,7 +23,7 @@ import           Text.Megaparsec.Char
 
 mainParser :: Parser MainProgram
 mainParser = do
-  mainProgramElements <- some $ nonIndented $ choice [ MainProgramFunction <$> functionParser <?> "function definition"
+  mainProgramElements <- some $ nonIndented $ choice [ MainProgramFunction <$> functionParser Nothing True <?> "function definition"
                                                              , MainProgramStatement <$> statement <?> "program statement"
                                                              , MainProgramClass <$> classParser <?> "class definition"]
   registerQuadruple QuadEnd
@@ -65,42 +63,69 @@ functionArgument :: Parser FunctionArgument
 functionArgument = do
   argumentName <- newIdentifier
   colonSymbol
-  argumentType <- simpleType
-  address <- nextVarAddress argumentType
-  modify $ insertVariable (Variable (Simple argumentType) True address) argumentName
+  argumentT <- simpleType
+  let argumentType = Simple argumentT
+  argumentAddress <- nextVarAddress argumentT
+  modify $ insertVariable (Variable argumentType True argumentAddress) argumentName
   return FunctionArgument{..}
 
-functionParser :: Parser Function
-functionParser = do
+functionParser :: Maybe Text -> Bool -> Parser Function
+functionParser givenName checkReturn = do
   ignoreFunction <- gets quadruplesCounter
   registerQuadruple QuadGOTOPlaceholder
   function <- scoped ScopePlaceholder $ indentBlock functionBlock
   registerQuadruple QuadEndFunc
   outsideFunction <- gets quadruplesCounter
   safeQuadrupleUpdate (fillGOTO outsideFunction) ignoreFunction
+  guardFail (functionReturns function) "Function must have a return as its last statement"
   return function
   where
     functionBlock = do
-      defSymbol
+      when checkReturn defSymbol
       functionName <- newIdentifier
-      functionDefinitionArguments <- parens $ sepBy functionArgument commaSymbol
-      arrowSymbol
-      functionDefinitionReturnType <- returnType
+      guardFail (maybe True (== functionName) givenName) "Function name does not match given name"
+      arguments <- parens $ sepBy functionArgument commaSymbol
+      maybeClass <- maybeInsideClass
+      sArguments <- selfArgument maybeClass arguments
+      functionDefinitionArguments <- superArgument maybeClass sArguments
+      let trueFunctionName = maybe functionName (addPrefix functionName) maybeClass
+      functionDefinitionReturnType <- if checkReturn
+        then arrowSymbol *> returnType
+        else return VoidReturn
       case functionDefinitionReturnType of
         ValueReturn sType -> do
           address <- nextGlobalVarAddress sType
-          modify $ insertGlobalVariable (Variable (Simple sType) True address) functionName
+          modify $ insertGlobalVariable (Variable (Simple sType) True address) trueFunctionName
         _ -> return ()
       colonSymbol
       functionDefinitionVarMB <- gets currentMemoryBlock
       functionDefinitionTempMB <- gets currentTempBlock
       functionDefinitionIP <- gets quadruplesCounter
       let fDefinition = FunctionDefinition{..}
-      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction functionName) ids vars mVars mTemp)
-      maybeClass <- maybeInsideClass
-      maybe (modify $ insertFunction functionName fDefinition) (f fDefinition functionName) maybeClass
+      modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeFunction trueFunctionName) ids vars mVars mTemp)
+      modify $ insertFunction trueFunctionName fDefinition
       indentSome (return . Function functionName functionDefinitionArguments functionDefinitionReturnType) statement
-    f fDefinition fName clsName = modify $ insertMethodToClass clsName fName fDefinition
+    addPrefix fName clsName = clsName <> "." <> fName
+    selfArgument (Just clsName) arguments = do
+      argumentAddress <- nextVarAddress IntType
+      let argumentName = "self"
+      let argumentType = ClassType clsName
+      modify $ insertVariable (Variable argumentType True argumentAddress) argumentName
+      let fArgument = FunctionArgument{..}
+      return $ fArgument : arguments
+    selfArgument Nothing arguments = return arguments
+    superArgument (Just clsName) arguments = do
+      (ClassDefinition mFather _) <- findClass clsName
+      case mFather of
+        Nothing -> return arguments
+        Just fatherClass -> do
+          argumentAddress <- nextVarAddress IntType
+          let argumentName = "super"
+          let argumentType = ClassType fatherClass
+          modify $ insertVariable (Variable argumentType True argumentAddress) argumentName
+          let fArgument = FunctionArgument{..}
+          return $ fArgument : arguments
+    superArgument Nothing arguments = return arguments
 
 whileParser :: Parser WhileLoop
 whileParser = do
@@ -168,7 +193,7 @@ functionCallParser :: Parser FunctionCall
 functionCallParser = do
   functionCallName <- identifier
   registerQuadruple $ QuadEra functionCallName
-  fArgumentsType <- fmap (Simple . argumentType) . functionDefinitionArguments <$> findFunction functionCallName
+  fArgumentsType <- fmap argumentType . functionDefinitionArguments <$> findFunction functionCallName
   functionCallArguments <- parens $ sepBy expr commaSymbol
   writeParams functionCallArguments
   guardFail (fArgumentsType == fmap expressionType functionCallArguments) "Argument types do not match for function call"
@@ -177,17 +202,25 @@ functionCallParser = do
 
 methodCallParser :: Parser MethodCall
 methodCallParser = do
-  methodCallObjectName <- selfSymbol <|> identifier
-  (Variable vType _ _) <- findVariable methodCallObjectName
-  clsName <- extractClassName vType
-  cls <- findClass clsName
+  methodCallObjectName <- selfSymbol <|> superSymbol <|> identifier
+  (Variable vType _ objAddress) <- findVariable methodCallObjectName
+  methodCallClassName <- extractClassName vType
   dotSymbol
   methodCallMethodName <- identifier
-  mDefinition <- maybeFail ("No method named " ++ T.unpack methodCallMethodName) (M.lookup methodCallMethodName (classDefinitionMethods cls))
-  methodCallArguments <- parens $ sepBy expr commaSymbol
+  classFather <- classDefinitionFather <$> findClass methodCallClassName
+  let methodFunctionName = methodCallClassName <> "." <> methodCallMethodName
+  let objExpr = Expr NoExpr (ClassType methodCallClassName) objAddress
+  registerQuadruple $ QuadEra methodFunctionName
+  mDefinition <- findFunction methodFunctionName
+  arguments <- parens $ sepBy expr commaSymbol
+  let methodCallArguments = case classFather of
+        Nothing -> objExpr : arguments
+        Just fatherName -> Expr NoExpr (ClassType fatherName) objAddress : objExpr : arguments
+  writeParams methodCallArguments
   let callTypes = expressionType <$> methodCallArguments
-  let defTypes = Simple . argumentType <$> functionDefinitionArguments mDefinition
+  let defTypes = argumentType <$> functionDefinitionArguments mDefinition
   guardFail (callTypes == defTypes) "Incorrect expression types for method call"
+  registerQuadruple $ QuadGOSUB methodFunctionName
   return MethodCall{..}
 
 returnParser :: Parser Statement
@@ -288,10 +321,25 @@ exprBool = do
   return (BoolLiteral bool address)
 
 exprFunctionCall :: Parser SimpleExpr
-exprFunctionCall = FunctionCallExpr <$> functionCallParser
+exprFunctionCall = do
+  fCall@(FunctionCall fName _) <- functionCallParser
+  (Variable _ _ address) <- findVariable fName
+  fDefinition <- findFunction fName
+  sType <- getValueReturnSimple $ functionDefinitionReturnType fDefinition
+  tempAddress <- nextTempAddress sType
+  registerQuadruple $ QuadAssign address tempAddress
+  return $ FunctionCallExpr fCall tempAddress
 
 exprMethodCall :: Parser SimpleExpr
-exprMethodCall = MethodCallExpr <$> methodCallParser
+exprMethodCall = do
+  mCall@(MethodCall _ clsName mName _) <- methodCallParser
+  let functionMethodName = clsName <> "." <> mName
+  (Variable _ _ address) <- findVariable functionMethodName
+  fDefinition <- findFunction functionMethodName
+  sType <- getValueReturnSimple $ functionDefinitionReturnType fDefinition
+  tempAddress <- nextTempAddress sType
+  registerQuadruple $ QuadAssign address tempAddress
+  return $ MethodCallExpr mCall tempAddress
 
 exprString :: Parser SimpleExpr
 exprString = do
@@ -318,7 +366,7 @@ factor = choice [ parens simpleExpr
                 , exprChar
                 , exprId]
 
-operatorTable :: [[Operator Parser SimpleExpr]]
+operatorTable :: [[Operator SimpleExpr]]
 operatorTable = [ [ prefix minusSymbol Neg
                   , prefix plusSymbol id]
                 , [ rightBinary exponentSymbol]
@@ -336,13 +384,13 @@ operatorTable = [ [ prefix minusSymbol Neg
                 , [ binary andSymbol]
                 , [ binary orSymbol]]
 
-binary :: Parser Op -> Operator Parser SimpleExpr
+binary :: Parser Op -> Operator SimpleExpr
 binary = InfixL . fmap Operate
 
-rightBinary :: Parser Op -> Operator Parser SimpleExpr
+rightBinary :: Parser Op -> Operator SimpleExpr
 rightBinary = InfixR . fmap Operate
 
-prefix :: Parser a -> (SimpleExpr -> SimpleExpr) -> Operator Parser SimpleExpr
+prefix :: Parser a -> (SimpleExpr -> SimpleExpr) -> Operator SimpleExpr
 prefix name f = Prefix (f <$ name)
 
 simpleExpr :: Parser SimpleExpr
@@ -382,11 +430,12 @@ objectAssignment = do
   obj <- selfSymbol <|> identifier
   dotSymbol
   member <- identifier
-  memberVariable <- findVariable (memberKey obj member)
+  (Variable vType _ objAddress) <- findVariable obj
+  memberT <- getMemberType member vType
   equalSymbol
-  e <- expr
-  guardFail (expressionType e == variableType memberVariable) "Expression type doesn't match member's"
-  modify $ setVariableAsInitialized (memberKey obj member)
+  e@Expr{memoryAddress=address, expressionType=eType} <- expr
+  guardFail (eType == Simple memberT) "Expression type doesn't match member's"
+  registerQuadruple $ QuadMemberAssign member objAddress address
   return (ObjectAssignment obj member e)
 
 forParser :: Parser ForLoop
@@ -433,47 +482,15 @@ classMember = do
   letSymbol
   memberIdentifier <- newIdentifier
   colonSymbol
-  memberType <- composedType
+  memberType <- simpleType
   addClassMember ClassMember{..}
   where
     addClassMember member = do
       className <- findScopeClassName
+      clsMembers <- classDefinitionMembers <$> findClass className
+      guardFail (member `notElem` clsMembers) "Repeated class member"
       modify $ insertMemberToClass className member
-      registerMember "self" member
       return member
-
-classConstructorParameter :: Parser ClassConstructorParameter
-classConstructorParameter = do
-  classConstructorParameterId <- newIdentifier
-  colonSymbol
-  classConstructorParameterType <- composedType
-  -- TODO: Deal with this when objects are more of a thing
-  modify $ insertVariable (Variable classConstructorParameterType True (Address (-1))) classConstructorParameterId
-  return ClassConstructorParameter{..}
-
-classConstructorParser :: Parser ClassConstructor
-classConstructorParser = scoped ScopeConstructor $ indentBlock indentedConstructor >>= addClassConstructor
-  where
-    indentedConstructor = do
-      _ <- identifier
-      classConstructorParameters <- parens $ sepBy classConstructorParameter commaSymbol
-      colonSymbol
-      indentSome (listToConstructor $ ClassConstructor classConstructorParameters) helper
-    superConstructor = do
-      superSymbol
-      parens $ sepBy identifier commaSymbol
-    constructorAssignments = choice [ ConstructorPass <$ passSymbol
-                                    , ConstructorObjectAssignment <$> objectAssignment]
-    helper = ConstructorSuper <$> superConstructor <|> ConstructorAssignment <$> constructorAssignments
-    -- TODO: check super is only used if there is a parent class
-    listToConstructor f (ConstructorSuper x N.:| xs) = f (Just x) <$> traverse checkAssignment xs
-    listToConstructor f xs = f Nothing <$> traverse checkAssignment (N.toList xs)
-    checkAssignment (ConstructorAssignment x) = return x
-    checkAssignment _                         = fail "Expected assignment"
-    addClassConstructor constructor = do
-      className <- findScopeClassName
-      modify $ insertConstructorToClass className constructor
-      return constructor
 
 classInitializationParser :: Parser ClassInitialization
 classInitializationParser = indentBlock initBlock
@@ -481,7 +498,7 @@ classInitializationParser = indentBlock initBlock
     initBlock = do
       initSymbol *> colonSymbol
       indentSome listToInit helper
-    helper = ClassMemberHelper <$> classMember <|> ClassConstructorHelper <$> classConstructorParser
+    helper = ClassMemberHelper <$> classMember <|> ClassConstructorHelper <$> functionParser (Just "__init__") False
     listToInit l = ClassInitialization <$> traverse checkMember (N.init l) <*> (checkConstructor . N.last) l
     checkMember (ClassMemberHelper x) = return x
     checkMember _ = fail "Can't have members after constructor definition"
@@ -508,12 +525,15 @@ classParser = do
       className <- newIdentifier
       modify $ modifyScope (\(Scope _ ids vars mVars mTemp) -> Scope (ScopeTypeClass className) ids vars mVars mTemp)
       classFather <- optional $ parens checkIdentifierClass
-      modify $ insertClassDefinition className (emptyClassDefinition classFather)
-      -- TODO: Deal with this when objects are more a thing
-      modify $ insertVariable (Variable (ClassType className) True (Address (-1))) "self"
+      fatherMembers <- case classFather of
+        Nothing -> return []
+        Just fatherName -> do
+          fatherDefinition <- findClass fatherName
+          return $ classDefinitionMembers fatherDefinition
+      modify $ insertClassDefinition className (ClassDefinition classFather fatherMembers)
       colonSymbol
       indentSome (listToClass $ Class className classFather) helper
-    helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser
+    helper = ClassHelperInit <$> classInitializationParser <|> ClassHelperMethod <$> functionParser Nothing True
     listToClass f (ClassHelperInit x N.:| xs) = f x <$> traverse checkMember xs
     listToClass _ _ = fail "Initialization block is required"
     checkMember (ClassHelperMethod f) = return f
@@ -525,12 +545,20 @@ createObjectParser =  do
   variableName <- newIdentifier
   colonSymbol
   clsName <- checkIdentifierClass
-  cls <- findClass clsName
+  ClassDefinition{classDefinitionFather=clsFather} <- findClass clsName
   exprs <- parens $ sepBy expr commaSymbol
-  let exprsTypes = expressionType <$> exprs
-  let constructorTypes = classConstructorParameterType <$> (classConstructorParameters . classDefinitionConstructor) cls
+  let constructorFunctionName = clsName <> ".__init__"
+  registerQuadruple $ QuadEra constructorFunctionName
+  constructorTypes <- fmap argumentType . functionDefinitionArguments <$> findFunction constructorFunctionName
+  pointerAddress <- nextVarAddress IntType
+  registerQuadruple $ QuadNextObjectId pointerAddress
+  modify (insertVariable (Variable (ClassType clsName) True pointerAddress) variableName)
+  let selfExpr = Expr NoExpr (ClassType clsName) pointerAddress
+  let constructorParams = case clsFather of
+        Nothing -> selfExpr : exprs
+        Just fatherName -> Expr NoExpr (ClassType fatherName) pointerAddress : selfExpr : exprs
+  writeParams constructorParams
+  let exprsTypes = expressionType <$> constructorParams
   guardFail (exprsTypes == constructorTypes) "Expressions for constructor do not match"
-  -- TODO: Deal with this when objects are more a thing
-  modify (insertVariable (Variable (ClassType clsName) True (Address (-1))) variableName)
-  registerObjectMembers cls variableName
+  registerQuadruple $ QuadGOSUB constructorFunctionName
   return $ CreateObject variableName clsName exprs

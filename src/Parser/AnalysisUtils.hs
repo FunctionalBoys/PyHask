@@ -98,7 +98,10 @@ findScopeFunctionName = do
 currentScopeIsGlobal :: Parser Bool
 currentScopeIsGlobal = do
   sTypes <- fmap scopeType <$> gets scopes
-  return $ N.head sTypes == ScopeTypeGlobal
+  return $ all f sTypes
+  where
+    f (ScopeTypeFunction _) = False
+    f _ = True
 
 insideFunction :: Parser Bool
 insideFunction = do
@@ -134,7 +137,7 @@ addScope sType = do
   modify $ addScope' sType currentScope
 
 addScope' :: ScopeType -> Scope -> (ParserState -> ParserState)
-addScope' sType Scope{scopeType=ScopeTypeGlobal} = modifyScopes $ N.cons (Scope sType [] M.empty newLocalVariables newLocalTemp)
+addScope' ScopePlaceholder _ = modifyScopes $ N.cons (Scope ScopePlaceholder [] M.empty newLocalVariables newLocalTemp)
 addScope' sType Scope{scopeVariablesMemory=mVars, scopeTempMemory=mTemp} = modifyScopes $ N.cons (Scope sType [] M.empty mVars mTemp)
 
 destroyScope :: Parser ScopeType

@@ -14,7 +14,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 reservedWords :: [Text]
 reservedWords = ["if", "elif", "else", "for", "while", "let", "def", "class", "self", "True", "False", "continue", "pass", "break",
-                 "and", "or", "not", "print", "read", "int", "float", "void", "char", "super", "init", "main", "return", "create"]
+                 "and", "or", "not", "print", "read", "int", "float", "void", "char", "super", "init", "main", "return", "create", "string"]
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "#"
@@ -169,6 +169,9 @@ returnSymbol = reservedWord "return"
 letSymbol :: Parser ()
 letSymbol = reservedWord "let"
 
+stringSymbol :: Parser ()
+stringSymbol = reservedWord "string"
+
 continueSymbol :: Parser Statement
 continueSymbol = Continue <$ reservedWord "continue"
 
@@ -191,10 +194,10 @@ falseSymbol :: Parser Bool
 falseSymbol = False <$ reservedWord "False"
 
 stringLiteral :: Parser String
-stringLiteral = char '"' *> manyTill alphaNumChar (char '"')
+stringLiteral = char '"' *> manyTill (satisfy (/= '"')) (char '"')
 
 charLiteral :: Parser Char
-charLiteral = between (char '\'') (char '\'') alphaNumChar
+charLiteral = between (char '\'') (char '\'') (satisfy (/= '\''))
 
 identifier :: Parser Text
 identifier = (lexeme . try) (p >>= check)

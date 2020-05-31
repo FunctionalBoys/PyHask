@@ -1,12 +1,11 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module VirtualMachine.VMExecution (virtualMachine) where
 
 import           Control.Category
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.State.Lazy
-import qualified Data.Vector              as V
+import qualified Data.Vector                    as V
+import           VirtualMachine.ConversionUtils
 import           VirtualMachine.VMTypes
 
 whileM_ :: (Monad m) => m Bool -> m a -> m ()
@@ -85,15 +84,16 @@ executeInstruction (ArrayAssign arrayBase offset valueAddress) = do
       value <- getValueFromAddress valueAddress
       setValue value (arrayBase + offsetValue)
     _ -> throwError "No integer offset for array assignment"
+executeInstruction (Print address) = do
+  value <- getValueFromAddress address
+  case value of
+    IntWrapper integer -> liftIO $ print integer
+    FloatWrapper float -> liftIO $ print float
+    CharWrapper char -> liftIO $ putStrLn [char]
+    BoolWrapper bool -> liftIO $ print bool
 
 virtualMachine :: VirtualMachine ()
 virtualMachine = whileM_ executionCondition executionAction
-
-addressConversion :: TypeBounds -> Address -> Either String Int
-addressConversion (TypeBounds vLower vUpper tLower tUpper) address
-  | address >= vLower && address <= vUpper = Right $ address - vLower
-  | address >= tLower && address <= tUpper = Right $ address - tLower + vUpper + 1
-  | otherwise = Left "Address is not convertable"
 
 getLocalContext :: VirtualMachine LocalContext
 getLocalContext = do
@@ -108,17 +108,6 @@ addressContextType address
   | address >= 12001 && address <= 44000 = Local
   | otherwise = Static
 
-getValueFromIndex :: MachineType -> MemoryBlock -> Int -> Maybe TypeWrapper
-getValueFromIndex IntType MemoryBlock{..} index = IntWrapper <$> intMemory V.!? index
-getValueFromIndex FloatType MemoryBlock{..} index = FloatWrapper <$> floatMemory V.!? index
-getValueFromIndex CharType MemoryBlock{..} index = CharWrapper <$> charMemory V.!? index
-getValueFromIndex BoolType MemoryBlock{..} index = BoolWrapper <$> boolMemory V.!? index
-
-updateMemoryBlock :: Int -> TypeWrapper -> MemoryBlock -> MemoryBlock
-updateMemoryBlock index (IntWrapper int) mBlock@MemoryBlock{intMemory=memory} = mBlock{intMemory = memory V.// [(index,int)]}
-updateMemoryBlock index (FloatWrapper float) mBlock@MemoryBlock{floatMemory=memory} = mBlock{floatMemory = memory V.// [(index, float)]}
-updateMemoryBlock index (CharWrapper char) mBlock@MemoryBlock{charMemory=memory} = mBlock{charMemory = memory V.// [(index, char)]}
-updateMemoryBlock index (BoolWrapper bool) mBlock@MemoryBlock{boolMemory=memory} = mBlock{boolMemory = memory V.// [(index, bool)]}
 
 updateContext :: ContextType -> LocalContext -> MachineState -> MachineState
 updateContext Global context mState = mState{globalContext = context}
@@ -137,9 +126,9 @@ addressContext  = getContext <<< addressContextType
 getValueFromAddress :: Address -> VirtualMachine TypeWrapper
 getValueFromAddress address = do
   LocalContext{localMemory=memory, addressType=addressConvertor} <- addressContext address
-  let (addressType, bounds) = addressConvertor address
+  let (addressT, bounds) = addressConvertor address
   index <- liftEither $ addressConversion bounds address
-  liftEither $ maybe (Left "Address out of type bounds") Right $ getValueFromIndex addressType memory index
+  liftEither $ maybe (Left "Address out of type bounds") Right $ getValueFromIndex addressT memory index
 
 setValue :: TypeWrapper -> Address -> VirtualMachine ()
 setValue value address = do

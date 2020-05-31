@@ -1,15 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module VirtualMachine.ExecParser where
+module VirtualMachine.ExecParser (parseExecutable) where
 
 import           Control.Monad
-import           Data.Text                  (Text)
+import           Control.Monad.Combinators.NonEmpty
+import           Data.Text                          (Text)
 import           Data.Void
 import           GHC.Float
-import           Text.Megaparsec
+import           Text.Megaparsec                    hiding (some)
 import           Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer as L
+import qualified Text.Megaparsec.Char.Lexer         as L
 import           VirtualMachine.VMTypes
+import Data.Bifunctor
 
 type Parser = Parsec Void Text
 
@@ -22,26 +24,44 @@ symbol = L.symbol sc
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
+integer :: Parser Int
+integer = try (lexeme L.decimal) <?> "Integer literal"
+
+float :: Parser Double
+float = try (lexeme L.float) <?> "Float literal"
+
+bool :: Parser Bool
+bool = True <$ symbol "True" <|> False <$ symbol "False"
+
+charP :: Parser Char
+charP = lexeme L.charLiteral
+
 nullP :: Parser ()
 nullP = void $ symbol "null"
 
 address :: Parser Address
-address = lexeme L.decimal
+address = try (lexeme L.decimal) <?> "Memory address"
 
 pointer :: Parser Pointer
-pointer = lexeme L.decimal
+pointer = try (lexeme L.decimal) <?> "Instruction pointer"
+
+parseExecutable :: String -> Text -> Either String ParserResult
+parseExecutable filename input = first errorBundlePretty $ runParser execParser filename input
+
+execParser :: Parser ParserResult
+execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> many valueAddressParser  <*> some instructionParser
 
 gotoParser :: Parser Instruction
-gotoParser = GOTO <$> (symbol "GOTO" *> nullP *> nullP *> pointer)
+gotoParser = GOTO <$> (symbol "GOTO" *> nullP *> nullP *> pointer) <?> "GOTO instruction"
 
 gototParser :: Parser Instruction
-gototParser = GOTOT <$> (symbol "GOTOT" *> address) <*> pointer
+gototParser = GOTOT <$> (symbol "GOTOT" *> address <* nullP) <*> pointer <?> "GOTOT instruction"
 
 gotofParser :: Parser Instruction
-gotofParser = GOTOF <$> (symbol "GOTOF" *> address) <*> pointer
+gotofParser = GOTOF <$> (symbol "GOTOF" *> address <* nullP) <*> pointer <?> "GOTOF instruction"
 
 assign :: Parser Instruction
-assign = Assign <$> (symbol "Assign" *> address) <*> pointer
+assign = Assign <$> (symbol "Assign" *> address <* nullP) <*> pointer
 
 verify :: Parser Instruction
 verify = Verify <$> (symbol "ArrayVerify" *> address) <*> address <*> address
@@ -96,37 +116,43 @@ expParser = f <$ symbol "Exp"
 eqParser :: Parser Operation
 eqParser = f <$ symbol "Eq"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left == right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left == right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left == right)
     f _ _ = Nothing
 
 neqParser :: Parser Operation
 neqParser = f <$ symbol "NEq"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left /= right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left /= right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left /= right)
     f _ _ = Nothing
 
 ltParser :: Parser Operation
 ltParser = f <$ symbol "Lt"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left < right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left < right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left < right)
     f _ _ = Nothing
 
 gtParser :: Parser Operation
 gtParser = f <$ symbol "Gt"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left > right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left > right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left > right)
     f _ _ = Nothing
 
 lteParser :: Parser Operation
 lteParser = f <$ symbol "Lte"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left <= right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left <= right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left <= right)
     f _ _ = Nothing
 
 gteParser :: Parser Operation
 gteParser = f <$ symbol "Gte"
   where
-    f (BoolWrapper left) (BoolWrapper right) = Just $ BoolWrapper(left >= right)
+    f (IntWrapper left) (IntWrapper right) = Just $ BoolWrapper(left >= right)
+    f (FloatWrapper left) (FloatWrapper right) = Just $ BoolWrapper (left >= right)
     f _ _ = Nothing
 
 andParser :: Parser Operation
@@ -168,28 +194,35 @@ unaryParser :: Parser UnaryOperation
 unaryParser = choice [notParser, negParser, floatConvertionParser]
 
 unaryOperationParser :: Parser Instruction
-unaryOperationParser = UnaryOperation <$> unaryParser <*> address <*> address
+unaryOperationParser = UnaryOperation <$> unaryParser <*> (address <* nullP) <*> address
 
 binaryOperationParser :: Parser Instruction
 binaryOperationParser = BinaryOperation <$> operationParser <*> address <*> address <*> address
 
-instrunctionParser :: Parser Instruction
-instrunctionParser = choice [gotoParser, binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd, noOp]
+printParser :: Parser Instruction
+printParser = Print <$> (symbol "Print" *> address <* nullP <* nullP)
+
+instructionParser :: Parser Instruction
+instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd, noOp, gotoParser, printParser] <?> "executable instruction"
 
 typeBoundParser :: Parser TypeBounds
-typeBoundParser = do
-  vL <- address
-  vU <- address
-  _ <- address
-  tL <- address
-  tU <- address
-  _ <- address
-  return (TypeBounds vL vU tL tU)
+typeBoundParser = TypeBounds <$> integer <*> (integer *> integer) <*> integer <*> (integer *> integer)
+
+typeWrapperParser :: Parser TypeWrapper
+typeWrapperParser = FloatWrapper <$> float <|> IntWrapper <$> integer <|> BoolWrapper <$> bool <|> CharWrapper <$> charP
+
+valueAddressParser :: Parser (TypeWrapper, Address)
+valueAddressParser = try $ (,) <$> typeWrapperParser <*> address
 
 memoryBoundsParser :: Parser MemoryBounds
-memoryBoundsParser = do
-  iB <- typeBoundParser
-  fB <- typeBoundParser
-  cB <- typeBoundParser
-  bB <- typeBoundParser
-  return (MemoryBounds iB fB cB bB)
+memoryBoundsParser = MemoryBounds <$> typeBoundParser <*> typeBoundParser <*> typeBoundParser <*> typeBoundParser
+
+literalTypeBoundsParser :: Parser TypeBounds
+literalTypeBoundsParser = do
+  lower <- address
+  _ <- address
+  upper <- address
+  return $ TypeBounds lower upper (upper + 1) (upper + 1)
+
+literalMemoryBoundsParser :: Parser MemoryBounds
+literalMemoryBoundsParser = MemoryBounds <$> literalTypeBoundsParser <*> literalTypeBoundsParser <*> literalTypeBoundsParser <*> literalTypeBoundsParser

@@ -1,12 +1,14 @@
 module VirtualMachine.VMExecution (virtualMachine) where
 
-import           Control.Category
+import           Control.Category ((<<<))
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.State.Lazy
 import qualified Data.Vector                    as V
 import           VirtualMachine.ConversionUtils
 import           VirtualMachine.VMTypes
+import qualified Data.Map.Strict as M
+import VirtualMachine.StateInitializer
 
 whileM_ :: (Monad m) => m Bool -> m a -> m ()
 whileM_ predicate action = go
@@ -91,6 +93,32 @@ executeInstruction (Print address) = do
     FloatWrapper float -> liftIO $ print float
     CharWrapper char -> liftIO $ putStrLn [char]
     BoolWrapper bool -> liftIO $ print bool
+executeInstruction EndFunc = do
+  LocalContext{checkpoint=recoveredPointer} <- removeLocalContext
+  jump recoveredPointer
+executeInstruction (Era fName) = do
+  FunctionDefinition{functionBounds=bounds} <- getFunctionDefinition fName
+  let wContext = LocalContext 0 (createMemBlock bounds) (addressInfo bounds)
+  modify (\mState -> mState{workingContext=Working fName wContext})
+executeInstruction (GOSUB fName) = do
+  FunctionDefinition{instructionStart=start} <- getFunctionDefinition fName
+  wContext <- gets workingContext
+  currentInstruction <- gets instructionPointer
+  case wContext of
+    NoContext -> throwError "Trying to jump to a function without providing context for it before"
+    Working _ context -> jump start *> modify (addLocalContext context{checkpoint=currentInstruction+1})
+executeInstruction (FuncParam address index) = do
+  wContext <- gets workingContext
+  (fName, oldContext@LocalContext{addressType=addressConvertor, localMemory=oldMemory}) <- case wContext of
+    NoContext -> throwError "Trying to add param without previously using Era"
+    Working name context -> return (name, context)
+  value <- getValueFromAddress address
+  FunctionDefinition{parameterAddress=paramVector} <- getFunctionDefinition fName
+  paramAddress <- maybe (throwError "Parameter out of range") return (paramVector V.!? index)
+  let (_,bounds) = addressConvertor paramAddress
+  memoryIndex <- liftEither $ addressConversion bounds paramAddress
+  let nMemory = updateMemoryBlock memoryIndex value oldMemory
+  modify (\mState -> mState{workingContext = Working fName oldContext{localMemory=nMemory}})
 
 virtualMachine :: VirtualMachine ()
 virtualMachine = whileM_ executionCondition executionAction
@@ -102,12 +130,26 @@ getLocalContext = do
     context : _ -> return context
     []          -> throwError "Not inside a local context"
 
+getFunctionDefinition :: String -> VirtualMachine FunctionDefinition
+getFunctionDefinition fName = do
+  mDefinition <- asks (M.lookup fName <<< functionDefinitions)
+  maybe (throwError $ "No function with name " <> fName) return mDefinition
+
 addressContextType :: Address -> ContextType
 addressContextType address
   | address >= 1 && address <= 12000 = Global
   | address >= 12001 && address <= 44000 = Local
   | otherwise = Static
 
+addLocalContext :: LocalContext -> MachineState -> MachineState
+addLocalContext context mState@MachineState{localContexts=contexts} = mState{localContexts=context:contexts}
+
+removeLocalContext :: VirtualMachine LocalContext
+removeLocalContext = do
+  contexts <- gets localContexts
+  case contexts of
+    [] -> throwError "Not in a local context"
+    context : restOfContexts -> context <$ modify (\mState -> mState{localContexts=restOfContexts})
 
 updateContext :: ContextType -> LocalContext -> MachineState -> MachineState
 updateContext Global context mState = mState{globalContext = context}

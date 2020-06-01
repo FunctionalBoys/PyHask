@@ -49,7 +49,9 @@ stringifyAddressValue :: (Literal, Address) -> String
 stringifyAddressValue (literal, Address address) = show literal <> " " <> show address <> "\n"
 
 stringifyLiteralBlock :: LiteralBlock -> String
-stringifyLiteralBlock (LiteralBlock memoryBlock addressMap) = displayMemoryBlock memoryBlock <> "\n" <> concat (stringifyAddressValue <$> H.toList addressMap)
+stringifyLiteralBlock (LiteralBlock memoryBlock addressMap) = displayMemoryBlock memoryBlock <> "\n" <> show (length literalList) <> "\n" <> concat (stringifyAddressValue <$> literalList)
+  where
+    literalList = H.toList addressMap
 
 stringifyFunctionArguments :: [FunctionArgument] -> String
 stringifyFunctionArguments arguments = execWriter $ execStateT (forM_ arguments stringifyFunctionArguments') 0

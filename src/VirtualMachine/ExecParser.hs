@@ -49,18 +49,23 @@ pointer :: Parser Pointer
 pointer = try (lexeme L.decimal) <?> "Instruction pointer"
 
 parseExecutable :: String -> Text -> Either String ParserResult
-parseExecutable filename input = first errorBundlePretty $ runParser execParser filename input
+parseExecutable filename input = first errorBundlePretty $ runParser (between space eof execParser) filename input
 
 functionName :: Parser String
-functionName = (lexeme . try) p
+functionName = (lexeme . try) p <?> "function name"
   where
     p = (:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_')
 
 execParser :: Parser ParserResult
-execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> many valueAddressParser <*> (M.fromList <$> many nameDefinitionParser) <*> some instructionParser
+execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> parseLiterals <*> (M.fromList <$> many nameDefinitionParser) <*> some instructionParser
 
 nameDefinitionParser :: Parser (String, FunctionDefinition)
 nameDefinitionParser = try $ (,) <$> functionName <*> functionDefinitionParser
+
+parseLiterals :: Parser [(TypeWrapper, Address)]
+parseLiterals = do
+  literalCount <- integer
+  count literalCount valueAddressParser
 
 functionDefinitionParser :: Parser FunctionDefinition
 functionDefinitionParser = do
@@ -100,6 +105,18 @@ programEnd = ProgramEnd <$ (symbol "End" *> nullP *> nullP *> nullP)
 
 noOp :: Parser Instruction
 noOp = NoOp <$ (symbol "NoOp" *> nullP *> nullP *> nullP)
+
+eraParser :: Parser Instruction
+eraParser = Era <$> (symbol "Era" *> functionName)
+
+gosubParser :: Parser Instruction
+gosubParser = GOSUB <$> (symbol "GOSUB" *> functionName)
+
+endFuncParser :: Parser Instruction
+endFuncParser = EndFunc <$ (symbol "EndFunc" *> nullP *> nullP *> nullP)
+
+funcParamParser :: Parser Instruction
+funcParamParser = FuncParam <$> (symbol "FuncParam" *> address) <*> (nullP *> integer)
 
 sumParser :: Parser Operation
 sumParser = f <$ symbol "Sum"
@@ -226,7 +243,7 @@ printParser :: Parser Instruction
 printParser = Print <$> (symbol "Print" *> address <* nullP <* nullP)
 
 instructionParser :: Parser Instruction
-instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, programEnd, noOp, gotoParser, printParser] <?> "executable instruction"
+instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, endFuncParser, programEnd, noOp, gotoParser, printParser, eraParser, gosubParser, funcParamParser] <?> "executable instruction"
 
 typeBoundParser :: Parser TypeBounds
 typeBoundParser = TypeBounds <$> integer <*> (integer *> integer) <*> integer <*> (integer *> integer)

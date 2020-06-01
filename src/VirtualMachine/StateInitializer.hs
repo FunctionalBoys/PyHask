@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module VirtualMachine.StateInitializer (createVirtualMachineState) where
+module VirtualMachine.StateInitializer (createVirtualMachineState, createMemBlock) where
 
 import           Control.Monad.State.Lazy
 import qualified Data.Vector                    as V
@@ -29,4 +29,4 @@ createVirtualMachineState ParserResult{globalBounds=gBounds, staticBounds=sBound
   let infoFunction = addressInfo sBounds
   let staticMemBlock = createMemBlock sBounds
   filledStaticBlock <- execStateT (forM_ literals (addToMemoryState (snd . infoFunction))) staticMemBlock
-  return $ MachineState 0 (LocalContext 0 (createMemBlock gBounds) (addressInfo gBounds)) (LocalContext 0 filledStaticBlock infoFunction) []
+  return $ MachineState 0 (LocalContext 0 (createMemBlock gBounds) (addressInfo gBounds)) (LocalContext 0 filledStaticBlock infoFunction) [] NoContext

@@ -24,6 +24,10 @@ data Instruction =
       | ArrayAssign Address Address Address
       | NoOp
       | Print Address
+      | Era String
+      | GOSUB String
+      | FuncParam Address Int
+      | EndFunc
       | ProgramEnd
 
 data MemoryBlock = MemoryBlock { charMemory  :: Vector Char,
@@ -35,6 +39,8 @@ data MemoryBlock = MemoryBlock { charMemory  :: Vector Char,
 data MachineType = IntType | BoolType | CharType | FloatType deriving (Eq,Show)
 
 data TypeWrapper = IntWrapper Int | FloatWrapper Double | CharWrapper Char | BoolWrapper Bool deriving (Eq,Show)
+
+data WorkingContext = Working String LocalContext | NoContext
 
 data ContextType = Local | Global | Static deriving (Eq,Show)
 
@@ -53,7 +59,8 @@ data LocalContext = LocalContext { checkpoint :: Pointer,
 data MachineState = MachineState { instructionPointer :: Pointer,
                                    globalContext      :: LocalContext,
                                    staticContext      :: LocalContext,
-                                   localContexts      :: [LocalContext]
+                                   localContexts      :: [LocalContext],
+                                   workingContext     :: WorkingContext
                                  }
 
 data FunctionDefinition = FunctionDefinition { instructionStart :: Pointer,

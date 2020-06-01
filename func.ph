@@ -10,6 +10,8 @@ def fib(i:int) -> int:
     return 1
   return fib(i-1) + fib(i-2)
 
+let b : int := 1
+
 def f(i: int) -> int:
   let j : int := 0
   let fl : float := 1.0
@@ -17,11 +19,13 @@ def f(i: int) -> int:
   return k
 
 def g(i:int) -> int:
-  return i * 2
+  return i * 2 + b
 
 def f_void() -> void:
+  print('c')
   return
 
+print(g(2))
 let i: int := fact(5)
 print(i)
 let j: int := fib(10)
@@ -30,5 +34,6 @@ let a : int[5]
 for k : int := 0 : k < 5 : k := k + 1:
   a[k] := k
 
+f_void()
 for m : int := 0 : m < 5 : m := m + 1:
   print(a[m])

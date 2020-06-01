@@ -1,4 +1,4 @@
-Program ::= (Declaration | Function | Statement)*
+Program ::= (Class | Function | Statement)*
 SimpleType ::= ('int' | 'float' | 'string' | 'char' | 'bool')
 ComposedType ::= SimpleType ('[' IntLiteral ']')* | 'id'
 Class ::= 'class' 'id' ('(' 'id' ')')? ':' InitBlock Function*

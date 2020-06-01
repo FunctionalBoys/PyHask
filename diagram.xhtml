@@ -218,7 +218,7 @@
   </style>
          </defs></svg></head>
    <body>
-      <p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="Program">Program:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="191" height="145">
+      <p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="Program">Program:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="185" height="145">
          <defs>
             <style type="text/css">
     @namespace "http://www.w3.org/2000/svg";
@@ -249,20 +249,20 @@
   </style>
          </defs>
          <polygon points="9 139 1 135 1 143"/>
-         <polygon points="17 139 9 135 9 143"/><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#Declaration" xlink:title="Declaration">
-            <rect x="51" y="91" width="92" height="32"/>
-            <rect x="49" y="89" width="92" height="32" class="nonterminal"/>
-            <text class="nonterminal" x="59" y="109">Declaration</text></a><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#Function" xlink:title="Function">
+         <polygon points="17 139 9 135 9 143"/><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#Class" xlink:title="Class">
+            <rect x="51" y="91" width="54" height="32"/>
+            <rect x="49" y="89" width="54" height="32" class="nonterminal"/>
+            <text class="nonterminal" x="59" y="109">Class</text></a><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#Function" xlink:title="Function">
             <rect x="51" y="47" width="74" height="32"/>
             <rect x="49" y="45" width="74" height="32" class="nonterminal"/>
             <text class="nonterminal" x="59" y="65">Function</text></a><a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#Statement" xlink:title="Statement">
             <rect x="51" y="3" width="86" height="32"/>
             <rect x="49" y="1" width="86" height="32" class="nonterminal"/>
-            <text class="nonterminal" x="59" y="21">Statement</text></a><path xmlns:svg="http://www.w3.org/2000/svg" class="line" d="m17 139 h2 m20 0 h10 m0 0 h102 m-132 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m112 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-112 0 h10 m92 0 h10 m-122 10 l0 -44 q0 -10 10 -10 m122 54 l0 -44 q0 -10 -10 -10 m-112 0 h10 m74 0 h10 m0 0 h18 m-122 10 l0 -44 q0 -10 10 -10 m122 54 l0 -44 q0 -10 -10 -10 m-112 0 h10 m86 0 h10 m0 0 h6 m23 122 h-3"/>
-         <polygon points="181 139 189 135 189 143"/>
-         <polygon points="181 139 173 135 173 143"/></svg><p xmlns:xhtml="http://www.w3.org/1999/xhtml">
+            <text class="nonterminal" x="59" y="21">Statement</text></a><path xmlns:svg="http://www.w3.org/2000/svg" class="line" d="m17 139 h2 m20 0 h10 m0 0 h96 m-126 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m106 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-106 0 h10 m54 0 h10 m0 0 h32 m-116 10 l0 -44 q0 -10 10 -10 m116 54 l0 -44 q0 -10 -10 -10 m-106 0 h10 m74 0 h10 m0 0 h12 m-116 10 l0 -44 q0 -10 10 -10 m116 54 l0 -44 q0 -10 -10 -10 m-106 0 h10 m86 0 h10 m23 122 h-3"/>
+         <polygon points="175 139 183 135 183 143"/>
+         <polygon points="175 139 167 135 167 143"/></svg><p xmlns:xhtml="http://www.w3.org/1999/xhtml">
          <div class="ebnf"><code>
-               <div><a href="#Program" title="Program">Program</a>  ::= ( <a href="#Declaration" title="Declaration">Declaration</a> | <a href="#Function" title="Function">Function</a> | <a href="#Statement" title="Statement">Statement</a> )*</div></code></div>
+               <div><a href="#Program" title="Program">Program</a>  ::= ( <a href="#Class" title="Class">Class</a> | <a href="#Function" title="Function">Function</a> | <a href="#Statement" title="Statement">Statement</a> )*</div></code></div>
       </p>
       <p xmlns:xhtml="http://www.w3.org/1999/xhtml">no references</p><br xmlns:xhtml="http://www.w3.org/1999/xhtml" /><p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="SimpleType">SimpleType:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="159" height="213">
          <defs>
@@ -448,7 +448,11 @@
          <div class="ebnf"><code>
                <div><a href="#Class" title="Class">Class</a>    ::= 'class' 'id' ( '(' 'id' ')' )? ':' <a href="#InitBlock" title="InitBlock">InitBlock</a> <a href="#Function" title="Function">Function</a>*</div></code></div>
       </p>
-      <p xmlns:xhtml="http://www.w3.org/1999/xhtml">no references</p><br xmlns:xhtml="http://www.w3.org/1999/xhtml" /><p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="InitBlock">InitBlock:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="631" height="69">
+      <p xmlns:xhtml="http://www.w3.org/1999/xhtml">referenced by:
+         <ul>
+            <li><a href="#Program" title="Program">Program</a></li>
+         </ul>
+      </p><br xmlns:xhtml="http://www.w3.org/1999/xhtml" /><p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="InitBlock">InitBlock:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="631" height="69">
          <defs>
             <style type="text/css">
     @namespace "http://www.w3.org/2000/svg";
@@ -1075,7 +1079,6 @@
       </p>
       <p xmlns:xhtml="http://www.w3.org/1999/xhtml">referenced by:
          <ul>
-            <li><a href="#Program" title="Program">Program</a></li>
             <li><a href="#Statement" title="Statement">Statement</a></li>
          </ul>
       </p><br xmlns:xhtml="http://www.w3.org/1999/xhtml" /><p xmlns:xhtml="http://www.w3.org/1999/xhtml" style="font-size: 14px; font-weight:bold"><a name="Print">Print:</a></p><svg xmlns="http://www.w3.org/2000/svg" width="271" height="37">

@@ -269,7 +269,7 @@ data SimpleExpr =
   | IntLiteral Int Address
   | FloatLiteral Double Address
   | BoolLiteral Bool Address
-  | FunctionCallExpr FunctionCall
+  | FunctionCallExpr FunctionCall Address
   | MethodCallExpr MethodCall
   | MemberAccess Text Text
   | Not SimpleExpr

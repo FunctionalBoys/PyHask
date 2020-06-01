@@ -39,14 +39,10 @@ exprCheck (ArrayAccess ident indices) = do
   totalOffset <- writeArrayAccess indices boundaries
   registerQuadruple $ QuadArrayAccess baseAddress totalOffset tempAddress
   return (Expr (ArrayAccess ident indices) (Simple aType) tempAddress)
-exprCheck (FunctionCallExpr (FunctionCall fName fArguments)) = do
+exprCheck (FunctionCallExpr (FunctionCall fName fArguments) address) = do
   fDefinition <- findFunction fName
   returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
-  sType <- getValueReturnSimple $ functionDefinitionReturnType fDefinition
-  (Variable _ _ address) <- findVariable fName
-  tempAddress <- nextTempAddress sType
-  registerQuadruple $ QuadAssign address tempAddress
-  return (Expr (FunctionCallExpr (FunctionCall fName fArguments)) returnType tempAddress)
+  return (Expr (FunctionCallExpr (FunctionCall fName fArguments) address) returnType address)
 exprCheck (FloatConversion sExpr) = do
   (Expr _ eType eAddress) <- exprCheck sExpr
   guardFail (eType == Simple IntType) "Only int types can be converted to float"

@@ -1,6 +1,6 @@
 Program ::= (Declaration | Function | Class)* 'main:' Block
 SimpleType ::= ('int' | 'float' | 'string' | 'char' | 'bool')
-ComposedType ::= SimpleType '[' IntLiteral ']' | 'id'
+ComposedType ::= SimpleType ('[' IntLiteral ']')* | 'id'
 Class ::= 'class' 'id' ('(' 'id' ')')? ':' InitBlock Function*
 InitBlock ::= 'init' ':' ('let' 'id' ':' ComposedType)* Constructor
 Constructor ::= 'id' '(' ('id' ':' Composedtype (',' 'id' ':' ComposedType)*)? ')' ':' ConstructorBlock
@@ -31,5 +31,5 @@ FourthLevel ::= ('+' | '-')? Factor
 Factor ::= 'id' | FunctionCall | MethodCall | ArrayAccess | MemberAccess | '(' Expr ')' | Integer | Float | Bool | String
 Integer ::= IntLiteral
 Float ::= FloatLiteral
-Bool ::= 'True' | 'False'
-ArrayAccess ::= 'id' '[' Expr ']'
+Bool ::= 'True' | 'False' 
+ArrayAccess ::= 'id' ('[' Expr ']')+

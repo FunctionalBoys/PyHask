@@ -95,15 +95,14 @@ findScopeFunctionName = do
     f (ScopeTypeFunction fName) = Just fName
     f _                         = Nothing
 
--- TODO: This is gonna have to change for objects too
 currentScopeIsGlobal :: Parser Bool
 currentScopeIsGlobal = do
   sTypes <- fmap scopeType <$> gets scopes
   return $ all f sTypes
   where
     f (ScopeTypeFunction _) = False
-    f ScopePlaceholder = False
-    f _ = True
+    f ScopePlaceholder      = False
+    f _                     = True
 
 insideFunction :: Parser Bool
 insideFunction = do
@@ -174,6 +173,13 @@ insertGlobalVariable var ident pState@ParserState{scopes = ss} = pState{scopes =
 
 insertFunction :: Text -> FunctionDefinition -> ParserState -> ParserState
 insertFunction ident f pState@ParserState{functionDefinitions=fDefinitions} = pState{functionDefinitions=M.insert ident f fDefinitions}
+
+functionReturns :: Function -> Bool
+functionReturns Function{functionReturnType=VoidReturn} = True
+functionReturns Function{functionStatements=stmts} = f $ N.last stmts
+  where
+    f (ReturnStatement _) = True
+    f _                   = False
 
 insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
 insertClassDefinition ident cls pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.insert ident cls cDefinitions}

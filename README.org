@@ -10,3 +10,5 @@ in scopes with arbitraty depth and to allow variables declared in a scope to be 
 PyHask borrows most of its syntax from Python, including type annotations for which it borrows Python's type hints.
 The project aims for the feel of an scripting language by not imposing the creation of a main block, and to
 freely allow variable declarations anywhere in the code.
+** Primitive types
+This language supports ~int~, ~float~, ~char~ and ~bool~ as primitive types.

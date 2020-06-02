@@ -1,3 +1,12 @@
 * PyHask
 PyHask is the project for compiler's design class, it aims to build
 a small object oriented programming language using Haskell with syntax inspired on Python.
+* User's manual
+** Language's philosophy
+This language aims to be an imperative styled and statically typed language with support for the basic control flow structures,
+declaration for primitive types, declaration of N-dimensional arrays (PyHask does not impose a limit on the number of dimensions for an array), primitive based functions and basic objected oriented functionality. PyHask believes
+in scopes with arbitraty depth and to allow variables declared in a scope to be redeclared outside of it.
+
+PyHask borrows most of its syntax from Python, including type annotations for which it borrows Python's type hints.
+The project aims for the feel of an scripting language by not imposing the creation of a main block, and to
+freely allow variable declarations anywhere in the code.

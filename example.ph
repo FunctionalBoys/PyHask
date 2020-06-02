@@ -25,6 +25,9 @@ class MemberedClass:
   def f(i: int) -> void:
     self.member1 := i
 
+  def calc() -> float:
+    return self.member1 * self.member2
+
 def g(i : int) -> int:
   let b : bool := True
   if True:
@@ -48,6 +51,7 @@ let l : char[5]
 create a : Hola(5)
 create m : MemberedClass(5+2,1.0+p(1.0))
 m.f(1)
+print(m.calc())
 p(2+1.0)
 let abc, perro : float := y * x
 let result : float := (x + y * abc / perro) ** 2

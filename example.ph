@@ -7,7 +7,7 @@ def h() -> void:
 
 class Hola:
   init:
-    Hola(i: int):
+    __init__(i: int):
       pass
 
   def f(d : float) -> int:
@@ -18,14 +18,22 @@ class MemberedClass:
     let member1 : int
     let member2 : float
 
-    MemberedClass(i: int, f: float):
+    __init__(i: int, f: float):
+      print(i)
+      print(f)
       self.member1 := i
+      print(self.member1)
       self.member2 := f
+      print(self.member2)
  
   def f(i: int) -> void:
-    self.member1 := i
+    if i > 1:
+      print(i)
+      self.f(i-1)
 
   def calc() -> float:
+    print(self.member1)
+    print(self.member2)
     return self.member1 * self.member2
 
 def g(i : int) -> int:
@@ -50,21 +58,5 @@ def p(f: float) -> float:
 let l : char[5]
 create a : Hola(5)
 create m : MemberedClass(5+2,1.0+p(1.0))
-m.f(1)
+m.f(5)
 print(m.calc())
-p(2+1.0)
-let abc, perro : float := y * x
-let result : float := (x + y * abc / perro) ** 2
-print(result)
-while x + y == 3:
-  print(1)
-  if 3 > 2:
-    print(1)
-  elif True:
-    print(2)
-  elif 3 >= 2:
-    print(3)
-  else
-    print(4)
-for i: int := 0 : i < 10 : i := i + 1:
-   print(i)

@@ -31,6 +31,9 @@ checkPlaceholder (QuadArrayAssign (Address t1) (Address t2) (Address t3)) = Righ
 checkPlaceholder QuadNoOP = Right "NoOp null null null"
 checkPlaceholder QuadEnd = Right "End null null null"
 checkPlaceholder (QuadOp op (Address t1) (Address t2) (Address t3)) = Right $ show op ++ " " ++ show t1 ++ " " ++ show t2 ++ " " ++ show t3
+checkPlaceholder (QuadMemberAccess member (Address base) (Address destination)) = Right $ "MemberAccess " <> unpack member <> " " <> show base <> " " <> show destination
+checkPlaceholder (QuadMemberAssign member (Address base) (Address newValue)) = Right $ "MemberAssign " <> unpack member <> " " <> show base <> " " <> show newValue
+checkPlaceholder (QuadNextObjectId (Address target)) = Right $ "NextObjectId null null " <> show target
 
 displayTypeMemoryBlock :: TypeMemoryBlock -> String
 displayTypeMemoryBlock (TypeMemoryBlock mlb mub cd) = show mlb ++ " " ++ show mub ++ " " ++ show cd

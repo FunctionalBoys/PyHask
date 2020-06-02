@@ -63,9 +63,10 @@ functionArgument :: Parser FunctionArgument
 functionArgument = do
   argumentName <- newIdentifier
   colonSymbol
-  argumentType <- simpleType
-  argumentAddress <- nextVarAddress argumentType
-  modify $ insertVariable (Variable (Simple argumentType) True argumentAddress) argumentName
+  argumentT <- simpleType
+  let argumentType = Simple argumentT
+  argumentAddress <- nextVarAddress argumentT
+  modify $ insertVariable (Variable argumentType True argumentAddress) argumentName
   return FunctionArgument{..}
 
 functionParser :: Maybe Text -> Bool -> Parser Function

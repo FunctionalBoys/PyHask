@@ -1,7 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Parser.Expressions (exprCheck, makeExprParser) where
 
 import qualified Data.List.NonEmpty   as N
-import qualified Data.Map             as M
 import qualified Data.Text            as T
 import           Parser.AnalysisUtils
 import           Parser.GenUtils
@@ -10,6 +11,7 @@ import           Parser.Utils
 import Control.Monad.Combinators
 
 exprCheck :: SimpleExpr -> Parser Expr
+exprCheck NoExpr = fail "This should not happen"
 exprCheck var@(Var ident) = do
   (Variable vType initialized address) <- findVariable ident
   guardFail initialized $ "Can't use uninitailized variable " ++ T.unpack ident
@@ -47,19 +49,17 @@ exprCheck (FloatConversion sExpr) = do
   (Expr _ eType eAddress) <- exprCheck sExpr
   guardFail (eType == Simple IntType) "Only int types can be converted to float"
   quadFloatConvert sExpr eAddress
--- TODO: Check this when objects are more a thing
 exprCheck (MemberAccess obj member) = do
-  (Variable vType _ address) <- findVariable (memberKey obj member)
-  return (Expr (MemberAccess obj member) vType address)
--- TODO: Check this when functions are objects are more a thing
-exprCheck (MethodCallExpr (MethodCall objName methodName arguments)) = do
-  var <- findVariable objName
-  clsName <- extractClassName (variableType var)
-  cls <- findClass clsName
-  fDefinition <- maybeFail "Method definition not found" $  M.lookup methodName (classDefinitionMethods cls)
-  let returnType = functionDefinitionReturnType fDefinition
-  exprType <- getValueReturn returnType
-  return (Expr (MethodCallExpr (MethodCall objName methodName arguments)) exprType (Address (-1)))
+  (Variable vType _ address) <- findVariable obj
+  memberT <- getMemberType member vType
+  assignAddress <- nextTempAddress memberT
+  registerQuadruple $ QuadMemberAccess member address assignAddress
+  return (Expr (MemberAccess obj member) (Simple memberT) assignAddress)
+exprCheck (MethodCallExpr mCall@(MethodCall _ cls member _) address) = do
+  let methodFunctionName = cls <> "." <> member
+  fDefinition <- findFunction methodFunctionName
+  returnType <- getValueReturn $ functionDefinitionReturnType fDefinition
+  return (Expr (MethodCallExpr mCall address) returnType address)
 exprCheck (Operate op sExpr1 sExpr2) = do
   expr1 <- exprCheck sExpr1
   expr2 <- exprCheck sExpr2

@@ -179,7 +179,7 @@ insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
 insertClassDefinition ident cls pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.insert ident cls cDefinitions}
 
 emptyClassDefinition :: Maybe Text -> ClassDefinition
-emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing []) M.empty
+emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing [])
 
 findClass :: Text -> Parser ClassDefinition
 findClass cName = do
@@ -191,24 +191,10 @@ insertMemberToClass clsName member pState@ParserState{classDefinitions=cDefiniti
   where
     updateF cDef@ClassDefinition{classDefinitionMembers=members} = Just cDef{classDefinitionMembers=member:members}
 
-insertMethodToClass :: Text -> Text -> FunctionDefinition -> ParserState -> ParserState
-insertMethodToClass clsName methodName method pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
-  where
-    updateF cDef@ClassDefinition{classDefinitionMethods=methods} = Just $ cDef{classDefinitionMethods=M.insert methodName method methods}
-
 insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
 insertConstructorToClass clsName constructor pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
   where
     updateF cDef = Just cDef{classDefinitionConstructor=constructor}
-
-registerObjectMembers :: ClassDefinition -> Text -> Parser ()
-registerObjectMembers cls ident = do
-  let clsMembers = classDefinitionMembers cls
-  forM_ clsMembers (registerMember ident)
-
--- TODO: Review this when we get into more into objects
-registerMember :: Text -> ClassMember -> Parser()
-registerMember objectIdent (ClassMember memberIdent memberT) = modify $ insertVariable (Variable memberT True (Address (-1))) (memberKey objectIdent memberIdent)
 
 setVariableAsInitialized :: Text -> ParserState -> ParserState
 setVariableAsInitialized ident pState@ParserState{scopes=ss} = pState{scopes=updateF <$> ss}
@@ -226,3 +212,13 @@ insideLoop symbolName = do
     forCheck _                  = False
     whileCheck (ScopeTypeWhile _ _) = True
     whileCheck _                    = False
+
+findMember :: Text -> ClassMember -> Bool
+findMember name ClassMember{memberIdentifier=ident} = name == ident
+
+getMemberType :: Text -> ComposedType -> Parser SimpleType
+getMemberType memberName (ClassType clsName) = do
+  ClassDefinition{classDefinitionMembers=members} <- findClass clsName
+  let nMember = find (findMember memberName) members
+  maybe (fail $ "No member with name " <> T.unpack memberName) (return . memberType) nMember
+getMemberType _ _ = fail "Variable type is not an object"

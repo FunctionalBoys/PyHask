@@ -75,6 +75,9 @@ data Quad =
   | QuadVerify Address Address Address
   | QuadArrayAccess Address Address Address
   | QuadArrayAssign Address Address Address
+  | QuadMemberAccess Text Address Address
+  | QuadMemberAssign Text Address Address
+  | QuadNextObjectId Address
   | QuadNoOP
   | QuadEnd
   deriving (Eq,Show)
@@ -195,7 +198,7 @@ data Declaration = Declaration { declarationIdentifiers :: NonEmpty Text,
                                } deriving (Eq,Show)
 
 data FunctionArgument = FunctionArgument { argumentName :: Text,
-                                           argumentType :: SimpleType,
+                                           argumentType :: ComposedType,
                                            argumentAddress :: Address
                                          } deriving (Eq,Show)
 
@@ -210,12 +213,13 @@ data FunctionCall = FunctionCall { functionCallName      :: Text,
                                  } deriving (Eq,Show)
 
 data MethodCall = MethodCall { methodCallObjectName :: Text,
+                               methodCallClassName  :: Text,
                                methodCallMethodName :: Text,
                                methodCallArguments  :: [Expr]
                              } deriving (Eq,Show)
 
 data ClassMember = ClassMember { memberIdentifier :: Text,
-                                 memberType       :: ComposedType
+                                 memberType       :: SimpleType
                                } deriving (Eq,Show)
 
 data ClassConstructorAssignment =
@@ -251,8 +255,7 @@ data Class = Class { className           :: Text,
 
 data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
                                          classDefinitionMembers         :: [ClassMember],
-                                         classDefinitionConstructor     :: ClassConstructor,
-                                         classDefinitionMethods         :: M.Map Text FunctionDefinition
+                                         classDefinitionConstructor     :: ClassConstructor
                                        } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)
@@ -266,11 +269,12 @@ data Expr = Expr { innerExpression :: SimpleExpr,
 
 data SimpleExpr =
     Var Text
+  | NoExpr
   | IntLiteral Int Address
   | FloatLiteral Double Address
   | BoolLiteral Bool Address
   | FunctionCallExpr FunctionCall Address
-  | MethodCallExpr MethodCall
+  | MethodCallExpr MethodCall Address
   | MemberAccess Text Text
   | Not SimpleExpr
   | Neg SimpleExpr

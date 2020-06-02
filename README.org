@@ -43,4 +43,46 @@ creation is to use ~create~ followed by the class from which the object will be 
 the parameters to be passed to the constructor.
 **** Valid object declaration
 ~create h : Home(10,5.0)~
+** Control flow structures
+*** Conditionals
+PyHask supports conditionals by means of having ~if~, ~elif~, and ~else~ blocks. These blocks work just like in Python, with ~if~ block optionally followed by a number of
+~elif~ blocks and optionally an ~else~ block as a catch all.
+
+After the ~if~ and ~elif~ keywords a boolean expression must be stated to evaluate if the block is going to be executed.
+**** Valid conditonal - only if block
+#+BEGIN_SRC python
+if 5 < 2:
+  print(1)
+#+END_SRC
+**** Valid conditional - with multiple elif blocks
+#+BEGIN_SRC python
+if 5 == 3:
+  print(1)
+elif 2 < 3:
+  print(2)
+elif 5 == 5:
+  print(3)
+#+END_SRC
+**** Valid conditional - with an else block
+#+BEGIN_SRC python
+if 5 == 3:
+  print(1)
+else
+  print(2)
+#+END_SRC
+*** While loop
+PyHask supports while loops the Python way, by using the keyword ~while~ followed by a boolean expression and a block of statements.
+**** Valid while loop
+#+BEGIN_SRC python
+while True:
+  print(3)
+#+END_SRC
+*** For loop
+For loops are one of the elements where PyHask differs from Python. For loops share some similarity with C-styled loops
+by first having variable declarations, followed by a boolean expression and an statement.
+**** Valid for loop
+#+BEGIN_SRC python
+for i : int := 0 : True : i := i + 1:
+  print(i)
+#+END_SRC
 

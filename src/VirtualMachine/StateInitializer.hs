@@ -6,6 +6,7 @@ import           Control.Monad.State.Lazy
 import qualified Data.Vector                    as V
 import           VirtualMachine.ConversionUtils
 import           VirtualMachine.VMTypes
+import qualified Data.Sequence as S
 
 vectorSize :: TypeBounds -> Int
 vectorSize (TypeBounds vLower vUpper tLower tUpper) = (vUpper - vLower + 1) + (tUpper - tLower + 1)
@@ -29,4 +30,4 @@ createVirtualMachineState ParserResult{globalBounds=gBounds, staticBounds=sBound
   let infoFunction = addressInfo sBounds
   let staticMemBlock = createMemBlock sBounds
   filledStaticBlock <- execStateT (forM_ literals (addToMemoryState (snd . infoFunction))) staticMemBlock
-  return $ MachineState 0 (LocalContext 0 (createMemBlock gBounds) (addressInfo gBounds)) (LocalContext 0 filledStaticBlock infoFunction) [] NoContext
+  return $ MachineState 0 (LocalContext 0 (createMemBlock gBounds) (addressInfo gBounds)) (LocalContext 0 filledStaticBlock infoFunction) [] NoContext S.empty 0

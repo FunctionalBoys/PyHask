@@ -1,14 +1,16 @@
 module VirtualMachine.VMExecution (virtualMachine) where
 
-import           Control.Category ((<<<))
+import           Control.Category                ((<<<))
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.State.Lazy
-import qualified Data.Vector                    as V
+import           Data.Map.Strict                 (Map)
+import qualified Data.Map.Strict                 as M
+import qualified Data.Sequence                   as S
+import qualified Data.Vector                     as V
 import           VirtualMachine.ConversionUtils
+import           VirtualMachine.StateInitializer
 import           VirtualMachine.VMTypes
-import qualified Data.Map.Strict as M
-import VirtualMachine.StateInitializer
 
 whileM_ :: (Monad m) => m Bool -> m a -> m ()
 whileM_ predicate action = go
@@ -91,8 +93,8 @@ executeInstruction (Print address) = do
   case value of
     IntWrapper integer -> liftIO $ print integer
     FloatWrapper float -> liftIO $ print float
-    CharWrapper char -> liftIO $ putStrLn [char]
-    BoolWrapper bool -> liftIO $ print bool
+    CharWrapper char   -> liftIO $ putStrLn [char]
+    BoolWrapper bool   -> liftIO $ print bool
 executeInstruction EndFunc = do
   LocalContext{checkpoint=recoveredPointer} <- removeLocalContext
   jump recoveredPointer
@@ -119,6 +121,20 @@ executeInstruction (FuncParam address index) = do
   memoryIndex <- liftEither $ addressConversion bounds paramAddress
   let nMemory = updateMemoryBlock memoryIndex value oldMemory
   modify (\mState -> mState{workingContext = Working fName oldContext{localMemory=nMemory}})
+executeInstruction (NextObjectId address) = do
+  nextId <- state (\mState@MachineState{objects=objs, objectIdCounter=counter} -> (counter, mState{objects=objs S.|> M.empty, objectIdCounter=counter+1}))
+  setValue (IntWrapper nextId) address
+executeInstruction (MemberAccess member base destination) = do
+  objectId <- getValueFromAddress base >>= forceInteger
+  object <- getObjectByIndex objectId
+  value <- maybe (throwError $ "Object doesn't have member " <> member) return (M.lookup member object)
+  setValue value destination
+executeInstruction (MemberAssign member base origin) = do
+  objectId <- getValueFromAddress base >>= forceInteger
+  object <- getObjectByIndex objectId
+  originValue <- getValueFromAddress origin
+  let newObject = M.insert member originValue object
+  modify (\mState@MachineState{objects=objs} -> mState{objects=S.update objectId newObject objs})
 
 virtualMachine :: VirtualMachine ()
 virtualMachine = whileM_ executionCondition executionAction
@@ -134,6 +150,11 @@ getFunctionDefinition :: String -> VirtualMachine FunctionDefinition
 getFunctionDefinition fName = do
   mDefinition <- asks (M.lookup fName <<< functionDefinitions)
   maybe (throwError $ "No function with name " <> fName) return mDefinition
+
+getObjectByIndex :: Int -> VirtualMachine (Map String TypeWrapper)
+getObjectByIndex index = do
+  mObject <- gets (S.lookup index <<< objects)
+  maybe (throwError $ "No object with id " <> show index) return mObject
 
 addressContextType :: Address -> ContextType
 addressContextType address
@@ -164,6 +185,10 @@ getContext Static = gets staticContext
 
 addressContext :: Address -> VirtualMachine LocalContext
 addressContext  = getContext <<< addressContextType
+
+forceInteger :: TypeWrapper -> VirtualMachine Int
+forceInteger (IntWrapper integer) = return integer
+forceInteger _ = throwError "Could not get an integer value"
 
 getValueFromAddress :: Address -> VirtualMachine TypeWrapper
 getValueFromAddress address = do

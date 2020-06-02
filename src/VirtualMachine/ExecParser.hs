@@ -54,7 +54,7 @@ parseExecutable filename input = first errorBundlePretty $ runParser (between sp
 functionName :: Parser String
 functionName = (lexeme . try) p <?> "function name"
   where
-    p = (:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_')
+    p = (:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_' <|> char '.')
 
 execParser :: Parser ParserResult
 execParser = ParserResult <$> memoryBoundsParser <*> literalMemoryBoundsParser <*> parseLiterals <*> (M.fromList <$> many nameDefinitionParser) <*> some instructionParser
@@ -228,7 +228,7 @@ floatConvertionParser = f <$ symbol "FloatConvert"
     f _                     = Nothing
 
 operationParser :: Parser Operation
-operationParser = choice [sumParser, minusParser, timesParser, divParser, expParser, eqParser, neqParser, ltParser, gtParser, lteParser, gteParser, andParser, orParser]
+operationParser = choice [sumParser, minusParser, timesParser, divParser, expParser, eqParser, neqParser, lteParser, gteParser, ltParser, gtParser, andParser, orParser]
 
 unaryParser :: Parser UnaryOperation
 unaryParser = choice [notParser, negParser, floatConvertionParser]
@@ -242,8 +242,17 @@ binaryOperationParser = BinaryOperation <$> operationParser <*> address <*> addr
 printParser :: Parser Instruction
 printParser = Print <$> (symbol "Print" *> address <* nullP <* nullP)
 
+memberAccessParser :: Parser Instruction
+memberAccessParser = MemberAccess <$> (symbol "MemberAccess" *> functionName) <*> address <*> address
+
+memberAssignParser :: Parser Instruction
+memberAssignParser = MemberAssign <$> (symbol "MemberAssign" *> functionName) <*> address <*> address
+
+nextObjectIdParser :: Parser Instruction
+nextObjectIdParser = NextObjectId <$> (symbol "NextObjectId" *> nullP *> nullP *> address)
+
 instructionParser :: Parser Instruction
-instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, endFuncParser, programEnd, noOp, gotoParser, printParser, eraParser, gosubParser, funcParamParser] <?> "executable instruction"
+instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, endFuncParser, programEnd, noOp, gotoParser, printParser, eraParser, gosubParser, funcParamParser, memberAccessParser, memberAssignParser, nextObjectIdParser] <?> "executable instruction"
 
 typeBoundParser :: Parser TypeBounds
 typeBoundParser = TypeBounds <$> integer <*> (integer *> integer) <*> integer <*> (integer *> integer)

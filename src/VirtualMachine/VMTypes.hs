@@ -5,6 +5,7 @@ import           Control.Monad.Reader     (ReaderT)
 import           Control.Monad.State.Lazy (StateT)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Map.Strict          (Map)
+import           Data.Sequence            (Seq)
 import           Data.Vector              (Vector)
 
 type Address = Int
@@ -24,6 +25,9 @@ data Instruction =
       | ArrayAssign Address Address Address
       | NoOp
       | Print Address
+      | MemberAccess String Address Address
+      | MemberAssign String Address Address
+      | NextObjectId Address
       | Era String
       | GOSUB String
       | FuncParam Address Int
@@ -60,7 +64,9 @@ data MachineState = MachineState { instructionPointer :: Pointer,
                                    globalContext      :: LocalContext,
                                    staticContext      :: LocalContext,
                                    localContexts      :: [LocalContext],
-                                   workingContext     :: WorkingContext
+                                   workingContext     :: WorkingContext,
+                                   objects :: Seq (Map String TypeWrapper),
+                                   objectIdCounter    :: Int
                                  }
 
 data FunctionDefinition = FunctionDefinition { instructionStart :: Pointer,

@@ -228,21 +228,12 @@ data ClassConstructorAssignment =
   | ConstructorObjectAssignment ObjectAssignment
   | ConstructorPass deriving (Eq,Show)
 
-data ClassConstructorParameter = ClassConstructorParameter { classConstructorParameterId :: Text,
-                                                             classConstructorParameterType :: ComposedType
-                                                           } deriving (Eq,Show)
-
 data ClassConstructorHelper = ConstructorSuper [Text] | ConstructorAssignment ClassConstructorAssignment
 
-data ClassConstructor = ClassConstructor { classConstructorParameters :: [ClassConstructorParameter],
-                                           classSuperConstructor :: Maybe [Text],
-                                           classConstructorAssignment :: [ClassConstructorAssignment]
-                                         } deriving (Eq,Show)
-
-data ClassInitHelper = ClassConstructorHelper ClassConstructor | ClassMemberHelper ClassMember
+data ClassInitHelper = ClassConstructorHelper Function | ClassMemberHelper ClassMember
 
 data ClassInitialization = ClassInitialization { classMembers :: [ClassMember],
-                                                 classConstructor :: ClassConstructor
+                                                 classConstructor :: Function
                                                } deriving (Eq,Show)
 
 data ClassHelper = ClassHelperInit ClassInitialization | ClassHelperMethod Function
@@ -254,8 +245,7 @@ data Class = Class { className           :: Text,
                    } deriving (Eq,Show)
 
 data ClassDefinition = ClassDefinition { classDefinitionFather          :: Maybe Text,
-                                         classDefinitionMembers         :: [ClassMember],
-                                         classDefinitionConstructor     :: ClassConstructor
+                                         classDefinitionMembers         :: [ClassMember]
                                        } deriving (Eq,Show)
 
 data Op = Sum | Minus | Times | Div | Exp | Eq | NEq | Lt | Gt | Lte | Gte | And | Or deriving (Eq,Show)

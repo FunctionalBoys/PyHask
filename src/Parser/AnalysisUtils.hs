@@ -178,9 +178,6 @@ insertFunction ident f pState@ParserState{functionDefinitions=fDefinitions} = pS
 insertClassDefinition :: Text -> ClassDefinition -> ParserState -> ParserState
 insertClassDefinition ident cls pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.insert ident cls cDefinitions}
 
-emptyClassDefinition :: Maybe Text -> ClassDefinition
-emptyClassDefinition father = ClassDefinition father [] (ClassConstructor [] Nothing [])
-
 findClass :: Text -> Parser ClassDefinition
 findClass cName = do
   cDefinitions <- gets classDefinitions
@@ -190,11 +187,6 @@ insertMemberToClass :: Text -> ClassMember -> ParserState -> ParserState
 insertMemberToClass clsName member pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
   where
     updateF cDef@ClassDefinition{classDefinitionMembers=members} = Just cDef{classDefinitionMembers=member:members}
-
-insertConstructorToClass :: Text -> ClassConstructor -> ParserState -> ParserState
-insertConstructorToClass clsName constructor pState@ParserState{classDefinitions=cDefinitions} = pState{classDefinitions=M.update updateF clsName cDefinitions}
-  where
-    updateF cDef = Just cDef{classDefinitionConstructor=constructor}
 
 setVariableAsInitialized :: Text -> ParserState -> ParserState
 setVariableAsInitialized ident pState@ParserState{scopes=ss} = pState{scopes=updateF <$> ss}

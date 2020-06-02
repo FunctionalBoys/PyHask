@@ -12,3 +12,35 @@ The project aims for the feel of an scripting language by not imposing the creat
 freely allow variable declarations anywhere in the code.
 ** Primitive types
 This language supports ~int~, ~float~, ~char~ and ~bool~ as primitive types.
+** Variable declarations
+*** Primitive declaration
+Primivites are declared in PyHask by using the keyword ~let~, specifying all the variables for that type; after that it is required to specify the primitive type for the variables and optionally and initial value for the variables. if no initial value is provided a default one will be given.
+**** Default values
+- ~int~  : ~0~
+- ~float~ : ~0.0~
+- ~char~ : ~a~
+- ~bool~ : ~True~
+**** Valid declaration with default value
+~let a : int := 10~
+**** Valid declaration no default value
+~let a : int~
+**** Invalid declaration
+~let a~
+*** Array declaration
+An array is declared also by using the keyword ~let~, specifying variables, and by specifying the type and dimensions of the array, arrays in PyHask are N-dimensional,
+arrays declaration do not support optional initial value as assigning an entire array is currently not supported in PyHask, all the values for the array have
+as initial value the default ones specified in the previous section of the document.
+**** Valid array declaration with one dimension
+~let a : int[5]~
+**** Valid array declarations with more than one dimensions
+- ~let a : int[5][6]~
+- ~let b : bool[3][9][10]~
+*** Object declaration
+To create an object it is necessary to first declare a class for which to instantiate an object from, this topic is gonna be covered later in the manual, in the meantime an example is gonna be given with a hypotethical class called ~Home~ that receives a integer and a floating point value on its constructors
+
+Object declaration uses the ~create~ keyword instead of the ~let~ keyword. The correct structure for object
+creation is to use ~create~ followed by the class from which the object will be instantiated, and in parenthesis
+the parameters to be passed to the constructor.
+**** Valid object declaration
+~create h : Home(10,5.0)~
+

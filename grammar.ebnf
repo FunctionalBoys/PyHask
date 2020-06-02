@@ -2,11 +2,8 @@ Program ::= (Class | Function | Statement)*
 SimpleType ::= ('int' | 'float' | 'string' | 'char' | 'bool')
 ComposedType ::= SimpleType ('[' IntLiteral ']')* | 'id'
 Class ::= 'class' 'id' ('(' 'id' ')')? ':' InitBlock Function*
-InitBlock ::= 'init' ':' ('let' 'id' ':' ComposedType)* Constructor
-Constructor ::= 'id' '(' ('id' ':' Composedtype (',' 'id' ':' ComposedType)*)? ')' ':' ConstructorBlock
-ConstructorBlock ::= 'super' '(' ('id' (',' 'id')*)? ')' ConstructorStatement* | ConstructorStatement+
+InitBlock ::= 'init' ':' ('let' 'id' ':' SimpleType)* Function
 Function ::= 'def' 'id' '(' ('id' ':' SimpleType ( ',' 'id' ':' SimpleType)*)? ')' '->' (SimpleType | 'void') ':' Block
-ConstructorStatement ::= Pass | Assignment
 CreateObject ::= 'create' 'id' ':' 'id' '(' ('id' (',' 'id')*)? ')'
 Statement ::= FunctionCall | MethodCall | Declaration | CreateObject | Assignment | If | While  | For | Print | Read | 'return' Expr? | 'continue' | 'pass' | 'break'
 Assignment ::= ('id' | 'self') ('.' 'id')? ('[' Expr ']')? ':=' Expr

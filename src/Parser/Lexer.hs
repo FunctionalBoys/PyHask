@@ -151,8 +151,8 @@ classSymbol = reservedWord "class"
 initSymbol :: Parser ()
 initSymbol = reservedWord "init"
 
-superSymbol :: Parser ()
-superSymbol = reservedWord "super"
+superSymbol :: Parser Text
+superSymbol = "super" <$ reservedWord "super"
 
 selfSymbol :: Parser Text
 selfSymbol = "self" <$ reservedWord "self"

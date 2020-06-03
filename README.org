@@ -101,3 +101,47 @@ def fact(i: int) -> int:
 def no_return() -> void:
   print(10)
 #+END_SRC
+** Classes
+Classes are perhaps the most complicated construct which PyHask has to offer. Again the syntax for it somewhat resembles Python's syntax.
+The ~class~ keyword must be used to indicate the start of a class declaration, optionally followed by a parent class enclosed in parenthesis.
+The class definition must be followed by an init block. Init blocks can contain member definitions and must always define a constructor named
+~init~. After the initialization block methods of the class can follow declared as regular functions while inside the indentantion of the class.
+Methods will have access to ~self~ referring to an instance of the object of the class for which the method belongs. Methods may have a ~super~ 
+variable referring to the parent of the class, this can be used to call a parent's method and it's specially useful in constructors to initialize the 
+variables the parent constructor initializes.
+*** Simple class example
+#+BEGIN_SRC python
+class Home:
+  init:
+    __init__(i:int):
+      pass
+
+  def f(d: float) -> int:
+    return 1
+#+END_SRC
+*** Class declaration
+#+BEGIN_SRC python
+class MemberedClass:
+  init:
+    let member1 : int
+    let member2 : float
+
+    __init__(i: int, f: float):
+      self.member1 := i
+      self.member2 := f
+
+  def calc() -> float:
+    return self.member1 * self.member2
+#+END_SRC
+*** Inheritance example
+#+BEGIN_SRC python
+class SonClass(MemberedClass):
+  init:
+    __init__(i: int, f: float):
+      super.__init__(i,f)
+
+  def calc() -> float:
+    return super.calc()
+#+END_SRC
+** More examples
+Please refer to the /ph/ files in the repository for more examples of PyHask

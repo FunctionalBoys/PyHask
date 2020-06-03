@@ -204,9 +204,15 @@ methodCallParser :: Parser MethodCall
 methodCallParser = do
   methodCallObjectName <- selfSymbol <|> superSymbol <|> identifier
   (Variable vType _ objAddress) <- findVariable methodCallObjectName
-  methodCallClassName <- extractClassName vType
+  clsName <- extractClassName vType
   dotSymbol
   methodCallMethodName <- identifier
+  clsFather <- classDefinitionFather <$> findClass clsName
+  let intermediateName = clsName <> "." <> methodCallMethodName
+  existsIntermediate <- existsFunction intermediateName
+  methodCallClassName <- if existsIntermediate
+    then return clsName
+    else maybe (fail "No father") return clsFather
   classFather <- classDefinitionFather <$> findClass methodCallClassName
   let methodFunctionName = methodCallClassName <> "." <> methodCallMethodName
   let objExpr = Expr NoExpr (ClassType methodCallClassName) objAddress

@@ -24,6 +24,7 @@ data Instruction =
       | ArrayAccess Address Address Address
       | ArrayAssign Address Address Address
       | NoOp
+      | Read Address
       | Print Address
       | MemberAccess String Address Address
       | MemberAssign String Address Address

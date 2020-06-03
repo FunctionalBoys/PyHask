@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module VirtualMachine.ExecParser (parseExecutable) where
+module VirtualMachine.ExecParser (parseExecutable, typeWrapperParser) where
 
 import           Control.Monad
 import           Control.Monad.Combinators.NonEmpty
@@ -242,6 +242,9 @@ binaryOperationParser = BinaryOperation <$> operationParser <*> address <*> addr
 printParser :: Parser Instruction
 printParser = Print <$> (symbol "Print" *> address <* nullP <* nullP)
 
+readParser :: Parser Instruction
+readParser = Read <$> (symbol "Read" *> address <* nullP <* nullP)
+
 memberAccessParser :: Parser Instruction
 memberAccessParser = MemberAccess <$> (symbol "MemberAccess" *> functionName) <*> address <*> address
 
@@ -252,7 +255,7 @@ nextObjectIdParser :: Parser Instruction
 nextObjectIdParser = NextObjectId <$> (symbol "NextObjectId" *> nullP *> nullP *> address)
 
 instructionParser :: Parser Instruction
-instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, endFuncParser, programEnd, noOp, gotoParser, printParser, eraParser, gosubParser, funcParamParser, memberAccessParser, memberAssignParser, nextObjectIdParser] <?> "executable instruction"
+instructionParser = choice [binaryOperationParser, unaryOperationParser, gototParser, gotofParser, assign, verify, arrayAccess, arrayAssign, endFuncParser, programEnd, noOp, gotoParser, printParser, eraParser, gosubParser, funcParamParser, memberAccessParser, memberAssignParser, nextObjectIdParser, readParser] <?> "executable instruction"
 
 typeBoundParser :: Parser TypeBounds
 typeBoundParser = TypeBounds <$> integer <*> (integer *> integer) <*> integer <*> (integer *> integer)

@@ -11,6 +11,9 @@ import qualified Data.Vector                     as V
 import           VirtualMachine.ConversionUtils
 import           VirtualMachine.StateInitializer
 import           VirtualMachine.VMTypes
+import VirtualMachine.ExecParser (typeWrapperParser)
+import qualified Data.Text.IO as T
+import Text.Megaparsec
 
 whileM_ :: (Monad m) => m Bool -> m a -> m ()
 whileM_ predicate action = go
@@ -42,6 +45,12 @@ executionAction = do
 
 jump :: Pointer -> VirtualMachine ()
 jump index = modify (\mState -> mState{instructionPointer = index - 1})
+
+readValue :: VirtualMachine TypeWrapper
+readValue = do
+  input <- liftIO T.getLine
+  let readResult = runParser typeWrapperParser "" input
+  either (const $ throwError "Error reading from terminal") return readResult
 
 executeInstruction :: Instruction -> VirtualMachine ()
 executeInstruction ProgramEnd = throwError "Program end should be unreachable by execution loop"
@@ -95,6 +104,9 @@ executeInstruction (Print address) = do
     FloatWrapper float -> liftIO $ print float
     CharWrapper char   -> liftIO $ putStrLn [char]
     BoolWrapper bool   -> liftIO $ print bool
+executeInstruction (Read address) = do
+  newValue <- readValue
+  setValue newValue address
 executeInstruction EndFunc = do
   LocalContext{checkpoint=recoveredPointer} <- removeLocalContext
   jump recoveredPointer

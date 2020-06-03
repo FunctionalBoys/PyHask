@@ -11,7 +11,7 @@ class Hola:
       pass
 
   def f(d : float) -> int:
-    pass
+    return 1
 
 class MemberedClass:
   init:

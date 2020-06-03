@@ -85,4 +85,19 @@ by first having variable declarations, followed by a boolean expression and an s
 for i : int := 0 : True : i := i + 1:
   print(i)
 #+END_SRC
-
+** Functions
+PyHask borrows its syntax for functions from Python, even the the type declarations for functions are based on Python's optional type hinting.
+Functions are declared by first using the keyword ~def~ followed by the name of the function and a list of parameters for the function to
+receive; finally the function must mark the return type for it with ~->~ and setting a primitive type or the ~void~ keyword.
+*** Function with return type
+#+BEGIN_SRC python
+def fact(i: int) -> int:
+  if i == 0:
+    return 1
+  return i * fact(i-1)
+#+END_SRC
+*** Function without a return type
+#+BEGIN_SRC python
+def no_return() -> void:
+  print(10)
+#+END_SRC

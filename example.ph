@@ -19,25 +19,18 @@ class MemberedClass:
     let member2 : float
 
     __init__(i: int, f: float):
-      print(i)
-      print(f)
       self.member1 := i
       print(self.member1)
       self.member2 := f
       print(self.member2)
  
   def calc() -> float:
-    print(self.member1)
-    print(self.member2)
     return self.member1 * self.member2
 
 class SonClass(MemberedClass):
   init:
     __init__(i: int, f: float):
       super.__init__(i,f)
-
-  def calc() -> float:
-    return super.calc()
 
 def g(i : int) -> int:
   let b : bool := True
@@ -60,5 +53,7 @@ def p(f: float) -> float:
 
 let l : char[5]
 create a : Hola(5)
-create m : SonClass(5+2,1.0+p(1.0))
+create m : MemberedClass(5,4.0)
+create s : SonClass(5+2,1.0+p(1.0))
 print(m.calc())
+print(s.calc())
